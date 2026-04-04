@@ -82,6 +82,13 @@ export function createLifecycleTracker(
       const uid = this.$.uid;
       collector.trackUpdateEnd(uid);
       collector.trackNodeCount(uid, countNodes(this.$el));
+      if (options.updateLogInterval && options.updateLogInterval > 0) {
+        const count = collector.getUpdateCount(uid);
+        if (count > 0 && count % options.updateLogInterval === 0) {
+          const log = collector.peek(uid);
+          if (log) emitLog(log, options);
+        }
+      }
     },
     unmounted(this: VueInstance) {
       const name = getComponentName(this);

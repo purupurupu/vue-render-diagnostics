@@ -71,6 +71,10 @@ export class Collector {
     tracker.hasAsyncInSetup = true;
   }
 
+  getUpdateCount(uid: number): number {
+    return this.trackers.get(uid)?.updates.length ?? 0;
+  }
+
   peek(uid: number): VRTComponentLog | null {
     const tracker = this.trackers.get(uid);
     if (!tracker) return null;
