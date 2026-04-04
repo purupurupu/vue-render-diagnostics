@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { countNodes } from './dom.ts';
 
 describe('countNodes', () => {
@@ -15,13 +15,11 @@ describe('countNodes', () => {
   });
 
   it('returns 0 when Element is not defined (SSR)', () => {
-    const original = globalThis.Element;
-    // @ts-expect-error -- simulating SSR environment
-    delete globalThis.Element;
+    vi.stubGlobal('Element', undefined);
     try {
       expect(countNodes({})).toBe(0);
     } finally {
-      globalThis.Element = original;
+      vi.unstubAllGlobals();
     }
   });
 });

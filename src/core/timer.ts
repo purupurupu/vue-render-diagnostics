@@ -11,7 +11,6 @@ export function startTimer(): TimerHandle {
 
 export function measurePaint(callback: (paintTimeMs: number) => void): void {
   if (typeof requestAnimationFrame === 'undefined') {
-    // SSR: no rAF available, call back synchronously with 0
     callback(0);
     return;
   }

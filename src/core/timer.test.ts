@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { startTimer, measurePaint } from './timer.ts';
 
 describe('startTimer', () => {
@@ -49,16 +49,14 @@ describe('measurePaint', () => {
   });
 
   it('calls callback synchronously with 0 when requestAnimationFrame is unavailable', () => {
-    const original = globalThis.requestAnimationFrame;
-    // @ts-expect-error -- simulating SSR environment
-    delete globalThis.requestAnimationFrame;
+    vi.stubGlobal('requestAnimationFrame', undefined);
     try {
       const callback = vi.fn();
       measurePaint(callback);
       expect(callback).toHaveBeenCalledOnce();
       expect(callback).toHaveBeenCalledWith(0);
     } finally {
-      globalThis.requestAnimationFrame = original;
+      vi.unstubAllGlobals();
     }
   });
 });
