@@ -51,5 +51,6 @@ export interface VRTPluginOptions {
   exclude?: string[] | RegExp;
   thresholds?: Partial<VRTThresholds>;
   logToConsole?: boolean;
+  updateLogInterval?: number;
   onLog?: (log: VRTComponentLog) => void;
 }

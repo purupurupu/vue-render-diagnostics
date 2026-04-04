@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { defineComponent } from 'vue';
+import { defineComponent, ref, nextTick } from 'vue';
 import { VueRenderDiagnostics } from '../plugin/install.ts';
 import { useRenderDiagnostics } from '../composables/useRenderDiagnostics.ts';
 import { clearFilterCache } from '../plugin/lifecycle-tracker.ts';
@@ -125,6 +125,82 @@ describe('VueRenderDiagnostics plugin', () => {
     wrapper.unmount();
 
     expect(logs).toHaveLength(mountLogs);
+  });
+
+  it('emits update log at configured interval', async () => {
+    const logs: VRTComponentLog[] = [];
+
+    const Counter = defineComponent({
+      name: 'Counter',
+      setup() {
+        const count = ref(0);
+        return { count };
+      },
+      template: '<div>{{ count }}</div>',
+    });
+
+    const wrapper = mount(Counter, {
+      global: {
+        plugins: [
+          [
+            VueRenderDiagnostics,
+            { updateLogInterval: 3, onLog: (log: VRTComponentLog) => logs.push(log) },
+          ],
+        ],
+      },
+    });
+
+    await flushRaf();
+    const afterMount = logsFor(logs, 'Counter').length;
+
+    // Trigger 3 updates
+    for (let i = 0; i < 3; i++) {
+      wrapper.vm.count++;
+      await nextTick();
+    }
+
+    expect(logsFor(logs, 'Counter').length).toBe(afterMount + 1);
+
+    // Trigger 3 more updates
+    for (let i = 0; i < 3; i++) {
+      wrapper.vm.count++;
+      await nextTick();
+    }
+
+    expect(logsFor(logs, 'Counter').length).toBe(afterMount + 2);
+
+    wrapper.unmount();
+  });
+
+  it('does not emit update logs when updateLogInterval is not set', async () => {
+    const logs: VRTComponentLog[] = [];
+
+    const Counter = defineComponent({
+      name: 'Counter2',
+      setup() {
+        const count = ref(0);
+        return { count };
+      },
+      template: '<div>{{ count }}</div>',
+    });
+
+    const wrapper = mount(Counter, {
+      global: {
+        plugins: [[VueRenderDiagnostics, { onLog: (log: VRTComponentLog) => logs.push(log) }]],
+      },
+    });
+
+    await flushRaf();
+    const afterMount = logsFor(logs, 'Counter2').length;
+
+    for (let i = 0; i < 10; i++) {
+      wrapper.vm.count++;
+      await nextTick();
+    }
+
+    expect(logsFor(logs, 'Counter2').length).toBe(afterMount);
+
+    wrapper.unmount();
   });
 });
 
