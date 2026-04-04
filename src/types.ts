@@ -28,10 +28,8 @@ export interface VRTIssue {
   value: number;
 }
 
-export type VRTLogType = 'vrt:mount' | 'vrt:unmount';
-
 export interface VRTComponentLog {
-  type: VRTLogType;
+  type: 'vrt:component';
   component: string;
   timestamp: number;
   metrics: VRTMetrics;

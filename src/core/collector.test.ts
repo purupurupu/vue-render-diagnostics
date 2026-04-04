@@ -93,7 +93,7 @@ describe('Collector', () => {
 
     const log = collector.flush(1);
     expect(log).toEqual({
-      type: 'vrt:unmount',
+      type: 'vrt:component',
       component: 'MyComponent',
       timestamp: 1710000000000,
       metrics: {

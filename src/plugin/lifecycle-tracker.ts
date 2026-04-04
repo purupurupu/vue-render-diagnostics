@@ -59,7 +59,7 @@ export function createLifecycleTracker(
       collector.trackNodeCount(uid, countNodes(this.$el));
       measurePaint((paintMs) => {
         collector.trackPaint(uid, paintMs);
-        const log = collector.peek(uid, 'vrt:mount');
+        const log = collector.peek(uid);
         if (log) emitLog(log, options);
       });
     },
@@ -78,8 +78,7 @@ export function createLifecycleTracker(
     unmounted(this: VueInstance) {
       const name = getComponentName(this);
       if (!shouldTrack(name, options)) return;
-      const log = collector.flush(this.$.uid);
-      if (log) emitLog(log, options);
+      collector.flush(this.$.uid);
     },
   };
 }

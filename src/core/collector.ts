@@ -1,10 +1,4 @@
-import type {
-  VRTComponentLog,
-  VRTLogType,
-  VRTMetrics,
-  VRTSignals,
-  VRTThresholds,
-} from '../types.ts';
+import type { VRTComponentLog, VRTMetrics, VRTSignals, VRTThresholds } from '../types.ts';
 import { DEFAULT_THRESHOLDS } from '../constants.ts';
 import { detectIssues } from './detector.ts';
 
@@ -77,20 +71,20 @@ export class Collector {
     tracker.hasAsyncInSetup = true;
   }
 
-  peek(uid: number, type: VRTLogType = 'vrt:mount'): VRTComponentLog | null {
+  peek(uid: number): VRTComponentLog | null {
     const tracker = this.trackers.get(uid);
     if (!tracker) return null;
-    return this.buildLog(tracker, type);
+    return this.buildLog(tracker);
   }
 
   flush(uid: number): VRTComponentLog | null {
     const tracker = this.trackers.get(uid);
     if (!tracker) return null;
     this.trackers.delete(uid);
-    return this.buildLog(tracker, 'vrt:unmount');
+    return this.buildLog(tracker);
   }
 
-  private buildLog(tracker: ComponentTracker, type: VRTLogType): VRTComponentLog {
+  private buildLog(tracker: ComponentTracker): VRTComponentLog {
     const updateCount = tracker.updates.length;
     const totalUpdateMs = tracker.updates.reduce((sum, d) => sum + d, 0);
 
@@ -109,7 +103,7 @@ export class Collector {
     };
 
     return {
-      type,
+      type: 'vrt:component',
       component: tracker.componentName,
       timestamp: Date.now(),
       metrics,
