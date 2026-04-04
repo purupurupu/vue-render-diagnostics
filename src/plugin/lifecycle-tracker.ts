@@ -19,6 +19,7 @@ function shouldTrack(instance: VueInstance, context: VRTContext): boolean {
 
   if (context.options.include) {
     if (context.options.include instanceof RegExp) {
+      context.options.include.lastIndex = 0;
       result = context.options.include.test(name);
     } else {
       result = context.options.include.includes(name);
@@ -27,6 +28,7 @@ function shouldTrack(instance: VueInstance, context: VRTContext): boolean {
 
   if (result && context.options.exclude) {
     if (context.options.exclude instanceof RegExp) {
+      context.options.exclude.lastIndex = 0;
       result = !context.options.exclude.test(name);
     } else {
       result = !context.options.exclude.includes(name);
