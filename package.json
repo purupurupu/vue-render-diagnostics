@@ -1,0 +1,47 @@
+{
+  "name": "vue-render-diagnostics",
+  "version": "0.0.1",
+  "description": "Vue 3 rendering diagnostics plugin with AI-optimized structured logging",
+  "keywords": [
+    "vue",
+    "diagnostics",
+    "performance",
+    "devtools",
+    "rendering"
+  ],
+  "homepage": "https://github.com/purupurupu/vue-render-diagnostics#readme",
+  "bugs": {
+    "url": "https://github.com/purupurupu/vue-render-diagnostics/issues"
+  },
+  "license": "MIT",
+  "author": "purupurupu",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/purupurupu/vue-render-diagnostics.git"
+  },
+  "type": "module",
+  "main": "./dist/vue-render-diagnostics.umd.cjs",
+  "module": "./dist/vue-render-diagnostics.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/vue-render-diagnostics.js",
+      "require": "./dist/vue-render-diagnostics.umd.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "peerDependencies": {
+    "vue": ">=3.3.0"
+  },
+  "engines": {
+    "node": ">=24",
+    "pnpm": ">=10"
+  },
+  "packageManager": "pnpm@10.13.1"
+}
