@@ -3,7 +3,6 @@ import { mount } from '@vue/test-utils';
 import { defineComponent, ref, nextTick } from 'vue';
 import { VueRenderDiagnostics } from '../plugin/install.ts';
 import { useRenderDiagnostics } from '../composables/useRenderDiagnostics.ts';
-import { clearFilterCache } from '../plugin/lifecycle-tracker.ts';
 import type { VRTComponentLog } from '../types.ts';
 import SimpleComponent from './fixtures/SimpleComponent.vue';
 
@@ -30,7 +29,6 @@ async function flushRaf(): Promise<void> {
 
 describe('VueRenderDiagnostics plugin', () => {
   beforeEach(() => {
-    clearFilterCache();
     vi.useFakeTimers();
     vi.spyOn(console, 'log').mockImplementation(() => {});
   });
@@ -202,11 +200,36 @@ describe('VueRenderDiagnostics plugin', () => {
 
     wrapper.unmount();
   });
+
+  it('isolates filter state between multiple app instances', async () => {
+    const logsA: VRTComponentLog[] = [];
+    const logsB: VRTComponentLog[] = [];
+
+    // App A includes only SimpleComponent
+    mountWithPlugin(SimpleComponent, {
+      pluginOptions: {
+        include: ['SimpleComponent'],
+        onLog: (log) => logsA.push(log),
+      },
+    });
+
+    // App B excludes SimpleComponent
+    mountWithPlugin(SimpleComponent, {
+      pluginOptions: {
+        exclude: ['SimpleComponent'],
+        onLog: (log) => logsB.push(log),
+      },
+    });
+
+    await flushRaf();
+
+    expect(logsFor(logsA, 'SimpleComponent')).toHaveLength(1);
+    expect(logsFor(logsB, 'SimpleComponent')).toHaveLength(0);
+  });
 });
 
 describe('useRenderDiagnostics composable', () => {
   beforeEach(() => {
-    clearFilterCache();
     vi.useFakeTimers();
     vi.spyOn(console, 'log').mockImplementation(() => {});
   });
