@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      '@types/node':
+        specifier: ^25.5.2
+        version: 25.5.2
       '@vue/test-utils':
         specifier: ^2.4.6
         version: 2.4.6
