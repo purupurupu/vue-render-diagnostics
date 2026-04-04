@@ -42,9 +42,11 @@ export class Collector {
 
   trackMountEnd(uid: number): void {
     const tracker = this.trackers.get(uid);
-    if (!tracker || tracker.mountTimer === null) return;
-    tracker.mountTimeMs = tracker.mountTimer.stop();
+    if (!tracker?.mountTimer) return;
+    const duration = tracker.mountTimer.stop();
     tracker.mountTimer = null;
+    if (duration < 0) return;
+    tracker.mountTimeMs = duration;
   }
 
   trackPaint(uid: number, paintTimeMs: number): void {
