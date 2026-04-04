@@ -26,6 +26,7 @@ export interface VRTIssue {
   severity: VRTIssueSeverity;
   metric: keyof VRTMetrics;
   value: number;
+  threshold: number;
 }
 
 export interface VRTComponentLog {
