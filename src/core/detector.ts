@@ -1,27 +1,37 @@
-import type { VRTIssue, VRTMetrics, VRTThresholds } from '../types.ts';
+import type { VRTIssue, VRTIssueSeverity, VRTMetrics, VRTThresholds } from '../types.ts';
+
+function classify(
+  value: number,
+  warnThreshold: number,
+): { severity: VRTIssueSeverity; threshold: number } {
+  const errorThreshold = warnThreshold * 2;
+  return value > errorThreshold
+    ? { severity: 'error', threshold: errorThreshold }
+    : { severity: 'warn', threshold: warnThreshold };
+}
 
 export function detectIssues(metrics: VRTMetrics, thresholds: VRTThresholds): VRTIssue[] {
   const issues: VRTIssue[] = [];
 
   if (metrics.mountTimeMs > thresholds.mountTimeMs) {
-    const isError = metrics.mountTimeMs > thresholds.mountTimeMs * 2;
+    const { severity, threshold } = classify(metrics.mountTimeMs, thresholds.mountTimeMs);
     issues.push({
       id: 'slow-mount',
-      severity: isError ? 'error' : 'warn',
+      severity,
       metric: 'mountTimeMs',
       value: metrics.mountTimeMs,
-      threshold: isError ? thresholds.mountTimeMs * 2 : thresholds.mountTimeMs,
+      threshold,
     });
   }
 
   if (metrics.avgUpdateMs > thresholds.updateTimeMs) {
-    const isError = metrics.avgUpdateMs > thresholds.updateTimeMs * 2;
+    const { severity, threshold } = classify(metrics.avgUpdateMs, thresholds.updateTimeMs);
     issues.push({
       id: 'slow-update',
-      severity: isError ? 'error' : 'warn',
+      severity,
       metric: 'avgUpdateMs',
       value: metrics.avgUpdateMs,
-      threshold: isError ? thresholds.updateTimeMs * 2 : thresholds.updateTimeMs,
+      threshold,
     });
   }
 
@@ -36,35 +46,35 @@ export function detectIssues(metrics: VRTMetrics, thresholds: VRTThresholds): VR
   }
 
   if (metrics.paintTimeMs > thresholds.paintTimeMs) {
-    const isError = metrics.paintTimeMs > thresholds.paintTimeMs * 2;
+    const { severity, threshold } = classify(metrics.paintTimeMs, thresholds.paintTimeMs);
     issues.push({
       id: 'slow-paint',
-      severity: isError ? 'error' : 'warn',
+      severity,
       metric: 'paintTimeMs',
       value: metrics.paintTimeMs,
-      threshold: isError ? thresholds.paintTimeMs * 2 : thresholds.paintTimeMs,
+      threshold,
     });
   }
 
   if (metrics.nodeCount > thresholds.nodeCount) {
-    const isError = metrics.nodeCount > thresholds.nodeCount * 2;
+    const { severity, threshold } = classify(metrics.nodeCount, thresholds.nodeCount);
     issues.push({
       id: 'large-dom',
-      severity: isError ? 'error' : 'warn',
+      severity,
       metric: 'nodeCount',
       value: metrics.nodeCount,
-      threshold: isError ? thresholds.nodeCount * 2 : thresholds.nodeCount,
+      threshold,
     });
   }
 
   if (metrics.updateCount > thresholds.updateCount) {
-    const isError = metrics.updateCount > thresholds.updateCount * 2;
+    const { severity, threshold } = classify(metrics.updateCount, thresholds.updateCount);
     issues.push({
       id: 'excessive-updates',
-      severity: isError ? 'error' : 'warn',
+      severity,
       metric: 'updateCount',
       value: metrics.updateCount,
-      threshold: isError ? thresholds.updateCount * 2 : thresholds.updateCount,
+      threshold,
     });
   }
 
