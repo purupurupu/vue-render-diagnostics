@@ -1,23 +1,6 @@
 # AI Agent Instructions
 
-> **Human contributors:** see [CLAUDE.md](./CLAUDE.md) for the full contributor guide.
-
-This file provides context for AI coding agents (Cursor, Copilot, Windsurf, etc.) working in this repository.
-
-## Project Structure
-
-```
-src/
-  core/            Performance timer, issue detector, logger, metrics collector
-  composables/     useRenderDiagnostics opt-in marker
-  plugin/          Vue plugin install function and lifecycle tracker mixin
-  utils/           DOM utilities
-  types.ts         All TypeScript type definitions
-  constants.ts     Thresholds, prefix, defaults
-  index.ts         Public API exports
-  __tests__/       Integration tests and Vue component fixtures
-playground/        Dev app for manual testing (pnpm playground)
-```
+> **Human contributors:** see [CLAUDE.md](./CLAUDE.md) for commands and project overview.
 
 ## Code Style
 
@@ -25,6 +8,7 @@ playground/        Dev app for manual testing (pnpm playground)
 - No barrel exports — import directly from source modules
 - SFC order: `<script setup>` then `<template>`
 - Tests follow `*.test.ts` naming, colocated in `src/`
+- `src/core/` modules must be pure functions with zero Vue API dependency
 - Format with Oxfmt (`singleQuote`, trailing commas, `printWidth: 100`)
 
 ## Commit & PR Guidelines

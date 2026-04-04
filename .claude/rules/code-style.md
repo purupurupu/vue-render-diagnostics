@@ -1,0 +1,7 @@
+- ESM modules (`"type": "module"`)
+- Use `import type` for type-only imports (`verbatimModuleSyntax` is enabled)
+- No barrel exports — import directly from the source module
+- SFC order: `<script setup>` then `<template>`
+- Format with Oxfmt before committing
+- Tests colocated in `src/` as `*.test.ts`
+- `src/core/` modules must be pure functions with zero Vue API dependency
