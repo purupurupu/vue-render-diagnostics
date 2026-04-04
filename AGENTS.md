@@ -9,19 +9,21 @@ This file provides context for AI coding agents (Cursor, Copilot, Windsurf, etc.
 ```
 src/
   core/            Performance timer, issue detector, logger, metrics collector
-  hooks/           Vue mixin and Composition API composable
+  composables/     useRenderDiagnostics opt-in marker
+  plugin/          Vue plugin install function and lifecycle tracker mixin
   utils/           DOM utilities
-  plugin.ts        Vue plugin install function
   types.ts         All TypeScript type definitions
   constants.ts     Thresholds, prefix, defaults
   index.ts         Public API exports
+  __tests__/       Integration tests and Vue component fixtures
+playground/        Dev app for manual testing (pnpm playground)
 ```
 
 ## Code Style
 
 - ESM modules, `import type` for type-only imports (`verbatimModuleSyntax`)
 - No barrel exports — import directly from source modules
-- File names use kebab-case (e.g. `use-render-diagnostics.ts`)
+- SFC order: `<script setup>` then `<template>`
 - Tests follow `*.test.ts` naming, colocated in `src/`
 - Format with Oxfmt (`singleQuote`, trailing commas, `printWidth: 100`)
 

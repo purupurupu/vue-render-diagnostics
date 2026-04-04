@@ -16,6 +16,7 @@ vue-render-diagnostics is a Vue 3 plugin that captures component rendering metri
 - `pnpm fmt:check` — Check formatting without writing
 - `pnpm test` — Run tests with Vitest
 - `pnpm test:watch` — Run tests in watch mode
+- `pnpm playground` — Dev server for the playground app
 
 Package manager is **pnpm** (not npm/yarn). Runtime: Node.js 24, pnpm 10 (managed via `.mise.toml`).
 
@@ -36,19 +37,22 @@ Vue plugin library distributed as ESM/UMD with TypeScript declarations.
 
 Pure-function modules with zero Vue API dependency — fully testable:
 
-- `timer.ts` — `performance.now()` wrapper and paint time measurement
+- `timer.ts` — `performance.now()` wrapper and double-rAF paint time measurement
 - `detector.ts` — Issue detection from metrics against thresholds
 - `logger.ts` — `[VRT]` prefixed structured JSON console output
-- `collector.ts` — Per-component metrics accumulation across lifecycle hooks
+- `collector.ts` — Per-component metrics accumulation across lifecycle hooks, with `peek()` for snapshots and `flush()` for cleanup
 
-### Vue Integration (`src/hooks/`)
+### Vue Integration
 
-- `mixin.ts` — Global mixin for automatic component tracking
-- `useRenderDiagnostics.ts` — Composition API composable for per-component opt-in
+- `src/plugin/install.ts` — Vue plugin `install()` function: option merging, collector creation, provide/inject, mixin registration
+- `src/plugin/lifecycle-tracker.ts` — Global mixin hooking into beforeMount/mounted/beforeUpdate/updated/unmounted with include/exclude filtering
+- `src/composables/useRenderDiagnostics.ts` — Opt-in marker: call in `setup()` to track a component regardless of include/exclude filters
 
-### Plugin (`src/plugin.ts`)
+### Log Emission Timing
 
-Vue plugin `install()` function — option merging, collector creation, provide/inject, mixin registration. Disabled in production by default.
+- **Mount completion** — `[VRT]` log emitted after paint measurement (double-rAF) for every tracked component
+- **Periodic updates** — When `updateLogInterval` is set, emits a snapshot every N updates
+- **Unmount** — Cleans up tracker (no log emission)
 
 ### Log Format
 
@@ -57,9 +61,16 @@ Vue plugin `install()` function — option merging, collector creation, provide/
   "type": "vrt:component",
   "component": "ComponentName",
   "timestamp": 1710000000000,
-  "metrics": { "mountTimeMs": 120, "paintTimeMs": 140, ... },
-  "signals": { "hasAsyncInSetup": true, ... },
-  "issues": [{ "id": "slow-mount", "severity": "warn", ... }]
+  "metrics": {
+    "mountTimeMs": 120,
+    "paintTimeMs": 140,
+    "updateCount": 5,
+    "avgUpdateMs": 18,
+    "maxUpdateMs": 40,
+    "nodeCount": 1200
+  },
+  "signals": { "hasAsyncInSetup": true, "dataUpdateDetected": true },
+  "issues": [{ "id": "slow-mount", "severity": "warn", "metric": "mountTimeMs", "value": 120 }]
 }
 ```
 
@@ -68,6 +79,7 @@ Vue plugin `install()` function — option merging, collector creation, provide/
 - ESM modules (`"type": "module"`)
 - Use `import type` for type-only imports (`verbatimModuleSyntax` is enabled)
 - No barrel exports — import directly from the source module
+- SFC order: `<script setup>` then `<template>`
 - Format with Oxfmt before committing
 - Tests colocated in `src/` as `*.test.ts`
 
