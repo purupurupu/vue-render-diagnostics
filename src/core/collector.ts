@@ -63,7 +63,7 @@ export class Collector {
 
   trackUpdateEnd(uid: number): void {
     const tracker = this.trackers.get(uid);
-    if (!tracker || tracker.updateTimer === null) return;
+    if (!tracker?.updateTimer) return;
     const duration = tracker.updateTimer.stop();
     tracker.updateTimer = null;
     if (duration < 0) return;
