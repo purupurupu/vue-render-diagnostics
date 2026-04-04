@@ -35,6 +35,7 @@
   },
   "scripts": {
     "dev": "vite build --watch",
+    "playground": "vite --config playground/vite.config.ts",
     "typecheck": "tsc -b",
     "build": "tsc -b && vite build",
     "lint": "oxlint .",
