@@ -1,0 +1,85 @@
+import type { ComponentOptions, ComponentPublicInstance } from 'vue';
+import type { VRTPluginOptions } from '../types.ts';
+import type { Collector } from '../core/collector.ts';
+import { measurePaint } from '../core/timer.ts';
+import { emitLog } from '../core/logger.ts';
+import { countNodes } from '../utils/dom.ts';
+
+type VueInstance = ComponentPublicInstance & { $: { uid: number } };
+
+const filterCache = new Map<string, boolean>();
+
+function shouldTrack(name: string | undefined, options: VRTPluginOptions): boolean {
+  if (!name) return false;
+
+  const cached = filterCache.get(name);
+  if (cached !== undefined) return cached;
+
+  let result = true;
+
+  if (options.include) {
+    if (options.include instanceof RegExp) {
+      result = options.include.test(name);
+    } else {
+      result = options.include.includes(name);
+    }
+  }
+
+  if (result && options.exclude) {
+    if (options.exclude instanceof RegExp) {
+      result = !options.exclude.test(name);
+    } else {
+      result = !options.exclude.includes(name);
+    }
+  }
+
+  filterCache.set(name, result);
+  return result;
+}
+
+function getComponentName(instance: VueInstance): string | undefined {
+  return instance.$options.name || instance.$options.__name;
+}
+
+export function createLifecycleTracker(
+  collector: Collector,
+  options: VRTPluginOptions,
+): ComponentOptions {
+  return {
+    beforeMount(this: VueInstance) {
+      const name = getComponentName(this);
+      if (!shouldTrack(name, options)) return;
+      collector.trackMountStart(name!, this.$.uid);
+    },
+    mounted(this: VueInstance) {
+      const name = getComponentName(this);
+      if (!shouldTrack(name, options)) return;
+      const uid = this.$.uid;
+      collector.trackMountEnd(uid);
+      collector.trackNodeCount(uid, countNodes(this.$el));
+      measurePaint((paintMs) => collector.trackPaint(uid, paintMs));
+    },
+    beforeUpdate(this: VueInstance) {
+      const name = getComponentName(this);
+      if (!shouldTrack(name, options)) return;
+      collector.trackUpdateStart(this.$.uid);
+    },
+    updated(this: VueInstance) {
+      const name = getComponentName(this);
+      if (!shouldTrack(name, options)) return;
+      const uid = this.$.uid;
+      collector.trackUpdateEnd(uid);
+      collector.trackNodeCount(uid, countNodes(this.$el));
+    },
+    unmounted(this: VueInstance) {
+      const name = getComponentName(this);
+      if (!shouldTrack(name, options)) return;
+      const log = collector.flush(this.$.uid);
+      if (log) emitLog(log, options);
+    },
+  };
+}
+
+export function clearFilterCache(): void {
+  filterCache.clear();
+}
