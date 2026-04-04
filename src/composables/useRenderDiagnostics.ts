@@ -1,5 +1,5 @@
-import { getCurrentInstance } from 'vue';
-import { markTracked } from '../plugin/lifecycle-tracker.ts';
+import { getCurrentInstance, inject } from 'vue';
+import { VRT_CONTEXT_KEY } from '../constants.ts';
 
 /**
  * Opt-in a component for VRT tracking.
@@ -10,8 +10,12 @@ export function useRenderDiagnostics(): void {
   const instance = getCurrentInstance();
   if (!instance) return;
 
-  const name = instance.type.__name || instance.type.name;
+  const context = inject(VRT_CONTEXT_KEY);
+  if (!context) return;
+
+  const name = instance.type.name || instance.type.__name;
   if (name) {
-    markTracked(name);
+    context.explicitlyTracked.add(name);
+    context.filterCache.delete(name);
   }
 }

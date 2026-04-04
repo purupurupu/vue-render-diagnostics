@@ -1,47 +1,39 @@
 import type { ComponentOptions, ComponentPublicInstance } from 'vue';
-import type { VRTPluginOptions } from '../types.ts';
-import type { Collector } from '../core/collector.ts';
+import type { VRTContext } from './context.ts';
 import { measurePaint } from '../core/timer.ts';
 import { emitLog } from '../core/logger.ts';
 import { countNodes } from '../utils/dom.ts';
 
 type VueInstance = ComponentPublicInstance & { $: { uid: number } };
 
-const filterCache = new Map<string, boolean>();
-const explicitlyTracked = new Set<string>();
-
-/** Mark a component name for tracking, bypassing include/exclude filters. */
-export function markTracked(name: string): void {
-  explicitlyTracked.add(name);
-  filterCache.delete(name);
-}
-
-function shouldTrack(name: string | undefined, options: VRTPluginOptions): boolean {
+function shouldTrack(instance: VueInstance, context: VRTContext): boolean {
+  const name = getComponentName(instance);
   if (!name) return false;
-  if (explicitlyTracked.has(name)) return true;
 
-  const cached = filterCache.get(name);
+  if (context.explicitlyTracked.has(name)) return true;
+
+  const cached = context.filterCache.get(name);
   if (cached !== undefined) return cached;
 
   let result = true;
 
-  if (options.include) {
-    if (options.include instanceof RegExp) {
-      result = options.include.test(name);
+  if (context.options.include) {
+    if (context.options.include instanceof RegExp) {
+      result = context.options.include.test(name);
     } else {
-      result = options.include.includes(name);
+      result = context.options.include.includes(name);
     }
   }
 
-  if (result && options.exclude) {
-    if (options.exclude instanceof RegExp) {
-      result = !options.exclude.test(name);
+  if (result && context.options.exclude) {
+    if (context.options.exclude instanceof RegExp) {
+      result = !context.options.exclude.test(name);
     } else {
-      result = !options.exclude.includes(name);
+      result = !context.options.exclude.includes(name);
     }
   }
 
-  filterCache.set(name, result);
+  context.filterCache.set(name, result);
   return result;
 }
 
@@ -49,19 +41,16 @@ function getComponentName(instance: VueInstance): string | undefined {
   return instance.$options.name || instance.$options.__name;
 }
 
-export function createLifecycleTracker(
-  collector: Collector,
-  options: VRTPluginOptions,
-): ComponentOptions {
+export function createLifecycleTracker(context: VRTContext): ComponentOptions {
+  const { collector, options } = context;
+
   return {
     beforeMount(this: VueInstance) {
-      const name = getComponentName(this);
-      if (!shouldTrack(name, options)) return;
-      collector.trackMountStart(name!, this.$.uid);
+      if (!shouldTrack(this, context)) return;
+      collector.trackMountStart(getComponentName(this)!, this.$.uid);
     },
     mounted(this: VueInstance) {
-      const name = getComponentName(this);
-      if (!shouldTrack(name, options)) return;
+      if (!shouldTrack(this, context)) return;
       const uid = this.$.uid;
       collector.trackMountEnd(uid);
       collector.trackNodeCount(uid, countNodes(this.$el));
@@ -72,13 +61,11 @@ export function createLifecycleTracker(
       });
     },
     beforeUpdate(this: VueInstance) {
-      const name = getComponentName(this);
-      if (!shouldTrack(name, options)) return;
+      if (!shouldTrack(this, context)) return;
       collector.trackUpdateStart(this.$.uid);
     },
     updated(this: VueInstance) {
-      const name = getComponentName(this);
-      if (!shouldTrack(name, options)) return;
+      if (!shouldTrack(this, context)) return;
       const uid = this.$.uid;
       collector.trackUpdateEnd(uid);
       collector.trackNodeCount(uid, countNodes(this.$el));
@@ -91,14 +78,8 @@ export function createLifecycleTracker(
       }
     },
     unmounted(this: VueInstance) {
-      const name = getComponentName(this);
-      if (!shouldTrack(name, options)) return;
+      if (!shouldTrack(this, context)) return;
       collector.flush(this.$.uid);
     },
   };
-}
-
-export function clearFilterCache(): void {
-  filterCache.clear();
-  explicitlyTracked.clear();
 }
