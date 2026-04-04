@@ -7,7 +7,9 @@ interface ComponentTracker {
   mountStart: number | null;
   mountTimeMs: number | null;
   paintTimeMs: number | null;
-  updates: number[];
+  updateCount: number;
+  totalUpdateMs: number;
+  maxUpdateMs: number;
   nodeCount: number;
   hasAsyncInSetup: boolean;
   updateStart: number | null;
@@ -27,7 +29,9 @@ export class Collector {
       mountStart: performance.now(),
       mountTimeMs: null,
       paintTimeMs: null,
-      updates: [],
+      updateCount: 0,
+      totalUpdateMs: 0,
+      maxUpdateMs: 0,
       nodeCount: 0,
       hasAsyncInSetup: false,
       updateStart: null,
@@ -55,8 +59,12 @@ export class Collector {
   trackUpdateEnd(uid: number): void {
     const tracker = this.trackers.get(uid);
     if (!tracker || tracker.updateStart === null) return;
-    tracker.updates.push(performance.now() - tracker.updateStart);
+    const duration = performance.now() - tracker.updateStart;
     tracker.updateStart = null;
+    if (duration < 0) return;
+    tracker.updateCount++;
+    tracker.totalUpdateMs += duration;
+    if (duration > tracker.maxUpdateMs) tracker.maxUpdateMs = duration;
   }
 
   trackNodeCount(uid: number, count: number): void {
@@ -72,7 +80,7 @@ export class Collector {
   }
 
   getUpdateCount(uid: number): number {
-    return this.trackers.get(uid)?.updates.length ?? 0;
+    return this.trackers.get(uid)?.updateCount ?? 0;
   }
 
   peek(uid: number): VRTComponentLog | null {
@@ -89,21 +97,18 @@ export class Collector {
   }
 
   private buildLog(tracker: ComponentTracker): VRTComponentLog {
-    const updateCount = tracker.updates.length;
-    const totalUpdateMs = tracker.updates.reduce((sum, d) => sum + d, 0);
-
     const metrics: VRTMetrics = {
       mountTimeMs: tracker.mountTimeMs ?? 0,
       paintTimeMs: tracker.paintTimeMs ?? 0,
-      updateCount,
-      avgUpdateMs: updateCount > 0 ? totalUpdateMs / updateCount : 0,
-      maxUpdateMs: updateCount > 0 ? Math.max(...tracker.updates) : 0,
+      updateCount: tracker.updateCount,
+      avgUpdateMs: tracker.updateCount > 0 ? tracker.totalUpdateMs / tracker.updateCount : 0,
+      maxUpdateMs: tracker.maxUpdateMs,
       nodeCount: tracker.nodeCount,
     };
 
     const signals: VRTSignals = {
       hasAsyncInSetup: tracker.hasAsyncInSetup,
-      dataUpdateDetected: updateCount > 0,
+      dataUpdateDetected: tracker.updateCount > 0,
     };
 
     return {

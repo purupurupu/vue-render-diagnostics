@@ -188,6 +188,80 @@ describe('Collector', () => {
     expect(second!.metrics.maxUpdateMs).toBe(20);
   });
 
+  it('handles 200k updates without error or excessive memory', () => {
+    const collector = new Collector();
+
+    collector.trackMountStart('StressComp', 1);
+    collector.trackMountEnd(1);
+
+    for (let i = 0; i < 200_000; i++) {
+      now = i * 2;
+      collector.trackUpdateStart(1);
+      now = i * 2 + 1;
+      collector.trackUpdateEnd(1);
+    }
+
+    const log = collector.flush(1);
+    expect(log!.metrics.updateCount).toBe(200_000);
+    expect(log!.metrics.avgUpdateMs).toBe(1);
+    expect(log!.metrics.maxUpdateMs).toBe(1);
+  });
+
+  it('ignores trackUpdateEnd without prior trackUpdateStart', () => {
+    const collector = new Collector();
+
+    collector.trackMountStart('TestComp', 1);
+    collector.trackMountEnd(1);
+
+    // Call trackUpdateEnd without trackUpdateStart
+    collector.trackUpdateEnd(1);
+
+    const log = collector.flush(1);
+    expect(log!.metrics.updateCount).toBe(0);
+    expect(log!.metrics.avgUpdateMs).toBe(0);
+    expect(log!.metrics.maxUpdateMs).toBe(0);
+  });
+
+  it('discards negative elapsed time from clock skew', () => {
+    const collector = new Collector();
+
+    collector.trackMountStart('TestComp', 1);
+    collector.trackMountEnd(1);
+
+    now = 100;
+    collector.trackUpdateStart(1);
+    now = 50; // clock went backwards
+    collector.trackUpdateEnd(1);
+
+    // second trackUpdateEnd without new trackUpdateStart must also be discarded
+    now = 200;
+    collector.trackUpdateEnd(1);
+
+    const log = collector.flush(1);
+    expect(log!.metrics.updateCount).toBe(0);
+    expect(log!.metrics.avgUpdateMs).toBe(0);
+  });
+
+  it('handles sub-millisecond update durations without drift', () => {
+    const collector = new Collector();
+
+    collector.trackMountStart('TestComp', 1);
+    collector.trackMountEnd(1);
+
+    const count = 10_000;
+    for (let i = 0; i < count; i++) {
+      now = i * 0.1;
+      collector.trackUpdateStart(1);
+      now = i * 0.1 + 0.1;
+      collector.trackUpdateEnd(1);
+    }
+
+    const log = collector.flush(1);
+    expect(log!.metrics.updateCount).toBe(count);
+    expect(log!.metrics.avgUpdateMs).toBeCloseTo(0.1, 5);
+    expect(log!.metrics.maxUpdateMs).toBeCloseTo(0.1, 5);
+  });
+
   it('ignores operations on unknown uid', () => {
     const collector = new Collector();
 
