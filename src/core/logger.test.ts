@@ -4,7 +4,7 @@ import type { VRTComponentLog } from '../types.ts';
 
 function makeLog(overrides: Partial<VRTComponentLog> = {}): VRTComponentLog {
   return {
-    type: 'vrt:component',
+    type: 'vrt:mount',
     component: 'TestComponent',
     timestamp: 1710000000000,
     metrics: {

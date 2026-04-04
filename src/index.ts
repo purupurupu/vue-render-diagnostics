@@ -5,6 +5,7 @@ export type {
   VRTComponentLog,
   VRTIssue,
   VRTIssueId,
+  VRTLogType,
   VRTIssueSeverity,
   VRTMetrics,
   VRTPluginOptions,

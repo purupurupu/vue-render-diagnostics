@@ -45,7 +45,7 @@ describe('VueRenderDiagnostics plugin', () => {
 
     const componentLogs = logsFor(logs, 'SimpleComponent');
     expect(componentLogs).toHaveLength(1);
-    expect(componentLogs[0].type).toBe('vrt:component');
+    expect(componentLogs[0].type).toBe('vrt:unmount');
     expect(componentLogs[0].metrics.mountTimeMs).toBeGreaterThanOrEqual(0);
   });
 
