@@ -8,9 +8,17 @@ import { countNodes } from '../utils/dom.ts';
 type VueInstance = ComponentPublicInstance & { $: { uid: number } };
 
 const filterCache = new Map<string, boolean>();
+const explicitlyTracked = new Set<string>();
+
+/** Mark a component name for tracking, bypassing include/exclude filters. */
+export function markTracked(name: string): void {
+  explicitlyTracked.add(name);
+  filterCache.delete(name);
+}
 
 function shouldTrack(name: string | undefined, options: VRTPluginOptions): boolean {
   if (!name) return false;
+  if (explicitlyTracked.has(name)) return true;
 
   const cached = filterCache.get(name);
   if (cached !== undefined) return cached;
@@ -57,7 +65,11 @@ export function createLifecycleTracker(
       const uid = this.$.uid;
       collector.trackMountEnd(uid);
       collector.trackNodeCount(uid, countNodes(this.$el));
-      measurePaint((paintMs) => collector.trackPaint(uid, paintMs));
+      measurePaint((paintMs) => {
+        collector.trackPaint(uid, paintMs);
+        const log = collector.peek(uid);
+        if (log) emitLog(log, options);
+      });
     },
     beforeUpdate(this: VueInstance) {
       const name = getComponentName(this);
@@ -74,12 +86,12 @@ export function createLifecycleTracker(
     unmounted(this: VueInstance) {
       const name = getComponentName(this);
       if (!shouldTrack(name, options)) return;
-      const log = collector.flush(this.$.uid);
-      if (log) emitLog(log, options);
+      collector.flush(this.$.uid);
     },
   };
 }
 
 export function clearFilterCache(): void {
   filterCache.clear();
+  explicitlyTracked.clear();
 }

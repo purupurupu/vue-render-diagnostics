@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useRenderDiagnostics } from '../src/index.ts';
 import HeavyList from './HeavyList.vue';
+
+// Opt-in App component for VRT tracking
+useRenderDiagnostics();
 
 const count = ref(0);
 const showHeavy = ref(false);

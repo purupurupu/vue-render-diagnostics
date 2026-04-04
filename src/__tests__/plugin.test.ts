@@ -1,12 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { mount, flushPromises } from '@vue/test-utils';
-import { defineComponent, nextTick } from 'vue';
+import { mount } from '@vue/test-utils';
+import { defineComponent } from 'vue';
 import { VueRenderDiagnostics } from '../plugin/install.ts';
 import { useRenderDiagnostics } from '../composables/useRenderDiagnostics.ts';
 import { clearFilterCache } from '../plugin/lifecycle-tracker.ts';
 import type { VRTComponentLog } from '../types.ts';
 import SimpleComponent from './fixtures/SimpleComponent.vue';
-import UpdatingComponent from './fixtures/UpdatingComponent.vue';
 
 function mountWithPlugin<T extends Record<string, unknown>>(
   component: Parameters<typeof mount>[0],
@@ -24,24 +23,31 @@ function logsFor(logs: VRTComponentLog[], name: string): VRTComponentLog[] {
   return logs.filter((l) => l.component === name);
 }
 
+async function flushRaf(): Promise<void> {
+  await vi.advanceTimersToNextFrame();
+  await vi.advanceTimersToNextFrame();
+}
+
 describe('VueRenderDiagnostics plugin', () => {
   beforeEach(() => {
     clearFilterCache();
+    vi.useFakeTimers();
     vi.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
-  it('emits log on component unmount', () => {
+  it('emits log after mount paint completion', async () => {
     const logs: VRTComponentLog[] = [];
-    const wrapper = mountWithPlugin(SimpleComponent, {
+    mountWithPlugin(SimpleComponent, {
       pluginOptions: { onLog: (log) => logs.push(log) },
       props: { message: 'hello' },
     });
 
-    wrapper.unmount();
+    await flushRaf();
 
     const componentLogs = logsFor(logs, 'SimpleComponent');
     expect(componentLogs).toHaveLength(1);
@@ -49,129 +55,132 @@ describe('VueRenderDiagnostics plugin', () => {
     expect(componentLogs[0].metrics.mountTimeMs).toBeGreaterThanOrEqual(0);
   });
 
-  it('tracks update metrics', async () => {
-    const logs: VRTComponentLog[] = [];
-    const wrapper = mountWithPlugin(UpdatingComponent, {
-      pluginOptions: { onLog: (log) => logs.push(log) },
-    });
-
-    wrapper.vm.increment();
-    await nextTick();
-
-    wrapper.vm.increment();
-    await nextTick();
-
-    wrapper.unmount();
-
-    const componentLogs = logsFor(logs, 'UpdatingComponent');
-    expect(componentLogs).toHaveLength(1);
-    expect(componentLogs[0].metrics.updateCount).toBe(2);
-    expect(componentLogs[0].signals.dataUpdateDetected).toBe(true);
-  });
-
-  it('does not track when enabled is false', () => {
+  it('does not track when enabled is false', async () => {
     const logs: VRTComponentLog[] = [];
     const wrapper = mountWithPlugin(SimpleComponent, {
       pluginOptions: { enabled: false, onLog: (log) => logs.push(log) },
     });
 
+    await flushRaf();
     wrapper.unmount();
     expect(logs).toHaveLength(0);
   });
 
-  it('respects include filter', () => {
+  it('respects include filter', async () => {
     const logs: VRTComponentLog[] = [];
-    const wrapper = mountWithPlugin(SimpleComponent, {
+    mountWithPlugin(SimpleComponent, {
       pluginOptions: {
         include: ['NonExistentComponent'],
         onLog: (log) => logs.push(log),
       },
     });
 
-    wrapper.unmount();
+    await flushRaf();
     const componentLogs = logsFor(logs, 'SimpleComponent');
     expect(componentLogs).toHaveLength(0);
   });
 
-  it('respects exclude filter', () => {
+  it('respects exclude filter', async () => {
     const logs: VRTComponentLog[] = [];
-    const wrapper = mountWithPlugin(SimpleComponent, {
+    mountWithPlugin(SimpleComponent, {
       pluginOptions: {
         exclude: ['SimpleComponent'],
         onLog: (log) => logs.push(log),
       },
     });
 
-    wrapper.unmount();
+    await flushRaf();
     const componentLogs = logsFor(logs, 'SimpleComponent');
     expect(componentLogs).toHaveLength(0);
   });
 
-  it('logs to console by default', () => {
+  it('logs to console after mount', async () => {
     const consoleSpy = vi.spyOn(console, 'log');
-    const wrapper = mountWithPlugin(SimpleComponent);
+    mountWithPlugin(SimpleComponent);
 
-    wrapper.unmount();
+    await flushRaf();
 
     expect(consoleSpy).toHaveBeenCalledWith('[VRT]', expect.any(String));
   });
 
-  it('does not log to console when logToConsole is false', () => {
+  it('does not log to console when logToConsole is false', async () => {
     const consoleSpy = vi.spyOn(console, 'log');
-    const wrapper = mountWithPlugin(SimpleComponent, {
+    mountWithPlugin(SimpleComponent, {
       pluginOptions: { logToConsole: false },
     });
 
-    wrapper.unmount();
+    await flushRaf();
     expect(consoleSpy).not.toHaveBeenCalledWith('[VRT]', expect.any(String));
+  });
+
+  it('cleans up tracker on unmount without emitting log', async () => {
+    const logs: VRTComponentLog[] = [];
+    const wrapper = mountWithPlugin(SimpleComponent, {
+      pluginOptions: { onLog: (log) => logs.push(log) },
+    });
+
+    await flushRaf();
+    const mountLogs = logs.length;
+
+    wrapper.unmount();
+
+    expect(logs).toHaveLength(mountLogs);
   });
 });
 
 describe('useRenderDiagnostics composable', () => {
   beforeEach(() => {
     clearFilterCache();
+    vi.useFakeTimers();
     vi.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
-  it('returns null metrics without plugin installed', () => {
+  it('does nothing without plugin installed', () => {
     const TestComp = defineComponent({
       setup() {
-        const { metrics, issues } = useRenderDiagnostics();
-        return { metrics, issues };
+        useRenderDiagnostics();
       },
       template: '<div />',
     });
 
+    // Should not throw
     const wrapper = mount(TestComp);
-    expect(wrapper.vm.metrics).toBeNull();
-    expect(wrapper.vm.issues).toEqual([]);
     wrapper.unmount();
   });
 
-  it('provides metrics when plugin is installed', async () => {
-    const TestComp = defineComponent({
-      name: 'ComposableTest',
+  it('opts in a component that would be excluded by filters', async () => {
+    const logs: VRTComponentLog[] = [];
+
+    const TrackedComp = defineComponent({
+      name: 'TrackedComp',
       setup() {
-        const { metrics, issues, flush } = useRenderDiagnostics();
-        return { metrics, issues, flush };
+        useRenderDiagnostics();
       },
       template: '<div />',
     });
 
-    const wrapper = mount(TestComp, {
+    mount(TrackedComp, {
       global: {
-        plugins: [[VueRenderDiagnostics, { logToConsole: false }]],
+        plugins: [
+          [
+            VueRenderDiagnostics,
+            {
+              include: ['SomethingElse'],
+              onLog: (log: VRTComponentLog) => logs.push(log),
+            },
+          ],
+        ],
       },
     });
 
-    wrapper.unmount();
-    await flushPromises();
+    await flushRaf();
 
-    expect(wrapper.vm.metrics).not.toBeNull();
-    expect(wrapper.vm.metrics!.mountTimeMs).toBeGreaterThanOrEqual(0);
+    const componentLogs = logsFor(logs, 'TrackedComp');
+    expect(componentLogs).toHaveLength(1);
   });
 });

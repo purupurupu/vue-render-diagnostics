@@ -141,6 +141,53 @@ describe('Collector', () => {
     );
   });
 
+  it('peek returns snapshot without removing tracker', () => {
+    const collector = new Collector();
+
+    now = 0;
+    collector.trackMountStart('TestComp', 1);
+    now = 10;
+    collector.trackMountEnd(1);
+
+    const snapshot = collector.peek(1);
+    expect(snapshot).not.toBeNull();
+    expect(snapshot!.metrics.mountTimeMs).toBe(10);
+
+    // tracker still exists — flush should also work
+    const log = collector.flush(1);
+    expect(log).not.toBeNull();
+    expect(log!.metrics.mountTimeMs).toBe(10);
+  });
+
+  it('peek returns null for unknown uid', () => {
+    const collector = new Collector();
+    expect(collector.peek(999)).toBeNull();
+  });
+
+  it('peek reflects updated metrics after each update', () => {
+    const collector = new Collector();
+
+    collector.trackMountStart('TestComp', 1);
+    collector.trackMountEnd(1);
+
+    now = 100;
+    collector.trackUpdateStart(1);
+    now = 110;
+    collector.trackUpdateEnd(1);
+
+    const first = collector.peek(1);
+    expect(first!.metrics.updateCount).toBe(1);
+
+    now = 200;
+    collector.trackUpdateStart(1);
+    now = 220;
+    collector.trackUpdateEnd(1);
+
+    const second = collector.peek(1);
+    expect(second!.metrics.updateCount).toBe(2);
+    expect(second!.metrics.maxUpdateMs).toBe(20);
+  });
+
   it('ignores operations on unknown uid', () => {
     const collector = new Collector();
 
