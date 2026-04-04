@@ -47,4 +47,18 @@ describe('measurePaint', () => {
     expect(callback).toHaveBeenCalledOnce();
     expect(callback).toHaveBeenCalledWith(expect.any(Number));
   });
+
+  it('calls callback synchronously with 0 when requestAnimationFrame is unavailable', () => {
+    const original = globalThis.requestAnimationFrame;
+    // @ts-expect-error -- simulating SSR environment
+    delete globalThis.requestAnimationFrame;
+    try {
+      const callback = vi.fn();
+      measurePaint(callback);
+      expect(callback).toHaveBeenCalledOnce();
+      expect(callback).toHaveBeenCalledWith(0);
+    } finally {
+      globalThis.requestAnimationFrame = original;
+    }
+  });
 });
