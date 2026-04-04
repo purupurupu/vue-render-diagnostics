@@ -35,6 +35,7 @@
   },
   "scripts": {
     "dev": "vite build --watch",
+    "typecheck": "tsc -b",
     "build": "tsc -b && vite build",
     "lint": "oxlint .",
     "fmt": "oxfmt --write .",
