@@ -41,7 +41,10 @@ function getComponentName(instance: VueInstance): string | undefined {
   return instance.$options.name || instance.$options.__name;
 }
 
-export function createVRTMixin(collector: Collector, options: VRTPluginOptions): ComponentOptions {
+export function createLifecycleTracker(
+  collector: Collector,
+  options: VRTPluginOptions,
+): ComponentOptions {
   return {
     beforeMount(this: VueInstance) {
       const name = getComponentName(this);
