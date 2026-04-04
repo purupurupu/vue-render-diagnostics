@@ -20,7 +20,7 @@ app.use(VueRenderDiagnostics);
 app.mount('#app');
 ```
 
-Open your browser console — you'll see `[VRT]` prefixed JSON logs when components unmount.
+Open your browser console — you'll see `[VRT]` prefixed JSON logs when components mount.
 
 ### Plugin Options
 
@@ -30,6 +30,7 @@ app.use(VueRenderDiagnostics, {
   include: ['UserList', 'Header'], // track only these components (string[] or RegExp)
   exclude: /^Internal/, // skip matching components (string[] or RegExp)
   logToConsole: true, // default: true
+  updateLogInterval: 10, // emit snapshot every 10 updates (default: disabled)
   thresholds: {
     mountTimeMs: 50, // default: 50
     updateTimeMs: 16, // default: 16 (one frame at 60fps)
@@ -38,19 +39,27 @@ app.use(VueRenderDiagnostics, {
     updateCount: 20, // default: 20
   },
   onLog: (log) => {
-    // programmatic consumer
     sendToAnalytics(log);
   },
 });
 ```
 
-### Composition API
+### Opt-in Tracking
+
+Use the composable to track a specific component regardless of include/exclude filters:
 
 ```ts
 import { useRenderDiagnostics } from 'vue-render-diagnostics';
 
-const { metrics, issues, flush } = useRenderDiagnostics();
+// In setup()
+useRenderDiagnostics();
 ```
+
+## Log Emission Timing
+
+- **Mount completion** — emitted after paint measurement for every tracked component
+- **Periodic updates** — when `updateLogInterval` is set, emits a snapshot every N updates
+- **Unmount** — cleans up internal tracker (no log emission)
 
 ## Log Format
 
