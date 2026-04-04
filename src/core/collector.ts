@@ -1,10 +1,12 @@
 import type { VRTComponentLog, VRTMetrics, VRTSignals, VRTThresholds } from '../types.ts';
+import type { TimerHandle } from './timer.ts';
 import { DEFAULT_THRESHOLDS } from '../constants.ts';
 import { detectIssues } from './detector.ts';
+import { startTimer } from './timer.ts';
 
 interface ComponentTracker {
   componentName: string;
-  mountStart: number | null;
+  mountTimer: TimerHandle | null;
   mountTimeMs: number | null;
   paintTimeMs: number | null;
   updateCount: number;
@@ -12,7 +14,7 @@ interface ComponentTracker {
   maxUpdateMs: number;
   nodeCount: number;
   hasAsyncInSetup: boolean;
-  updateStart: number | null;
+  updateTimer: TimerHandle | null;
 }
 
 export class Collector {
@@ -26,7 +28,7 @@ export class Collector {
   trackMountStart(name: string, uid: number): void {
     this.trackers.set(uid, {
       componentName: name,
-      mountStart: performance.now(),
+      mountTimer: startTimer(),
       mountTimeMs: null,
       paintTimeMs: null,
       updateCount: 0,
@@ -34,14 +36,17 @@ export class Collector {
       maxUpdateMs: 0,
       nodeCount: 0,
       hasAsyncInSetup: false,
-      updateStart: null,
+      updateTimer: null,
     });
   }
 
   trackMountEnd(uid: number): void {
     const tracker = this.trackers.get(uid);
-    if (!tracker || tracker.mountStart === null) return;
-    tracker.mountTimeMs = performance.now() - tracker.mountStart;
+    if (!tracker?.mountTimer) return;
+    const duration = tracker.mountTimer.stop();
+    tracker.mountTimer = null;
+    if (duration < 0) return;
+    tracker.mountTimeMs = duration;
   }
 
   trackPaint(uid: number, paintTimeMs: number): void {
@@ -53,14 +58,14 @@ export class Collector {
   trackUpdateStart(uid: number): void {
     const tracker = this.trackers.get(uid);
     if (!tracker) return;
-    tracker.updateStart = performance.now();
+    tracker.updateTimer = startTimer();
   }
 
   trackUpdateEnd(uid: number): void {
     const tracker = this.trackers.get(uid);
-    if (!tracker || tracker.updateStart === null) return;
-    const duration = performance.now() - tracker.updateStart;
-    tracker.updateStart = null;
+    if (!tracker?.updateTimer) return;
+    const duration = tracker.updateTimer.stop();
+    tracker.updateTimer = null;
     if (duration < 0) return;
     tracker.updateCount++;
     tracker.totalUpdateMs += duration;
