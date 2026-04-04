@@ -1,7 +1,3 @@
-<template>
-  <div>{{ value }}</div>
-</template>
-
 <script setup lang="ts">
 import { ref } from 'vue';
 
@@ -13,3 +9,7 @@ function increment() {
 
 defineExpose({ increment });
 </script>
+
+<template>
+  <div>{{ value }}</div>
+</template>

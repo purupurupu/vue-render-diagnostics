@@ -1,3 +1,11 @@
+<script setup lang="ts">
+import { ref } from 'vue';
+import HeavyList from './HeavyList.vue';
+
+const count = ref(0);
+const showHeavy = ref(false);
+</script>
+
 <template>
   <div>
     <h1>VRT Playground</h1>
@@ -12,11 +20,3 @@
     <HeavyList v-if="showHeavy" :items="500" />
   </div>
 </template>
-
-<script setup lang="ts">
-import { ref } from 'vue';
-import HeavyList from './HeavyList.vue';
-
-const count = ref(0);
-const showHeavy = ref(false);
-</script>
