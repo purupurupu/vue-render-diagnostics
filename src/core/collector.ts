@@ -71,11 +71,20 @@ export class Collector {
     tracker.hasAsyncInSetup = true;
   }
 
+  peek(uid: number): VRTComponentLog | null {
+    const tracker = this.trackers.get(uid);
+    if (!tracker) return null;
+    return this.buildLog(tracker);
+  }
+
   flush(uid: number): VRTComponentLog | null {
     const tracker = this.trackers.get(uid);
     if (!tracker) return null;
     this.trackers.delete(uid);
+    return this.buildLog(tracker);
+  }
 
+  private buildLog(tracker: ComponentTracker): VRTComponentLog {
     const updateCount = tracker.updates.length;
     const totalUpdateMs = tracker.updates.reduce((sum, d) => sum + d, 0);
 

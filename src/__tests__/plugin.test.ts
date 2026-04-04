@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { mount, flushPromises } from '@vue/test-utils';
-import { defineComponent, nextTick } from 'vue';
+import { mount } from '@vue/test-utils';
+import { defineComponent, nextTick, ref } from 'vue';
 import { VueRenderDiagnostics } from '../plugin/install.ts';
 import { useRenderDiagnostics } from '../composables/useRenderDiagnostics.ts';
 import { clearFilterCache } from '../plugin/lifecycle-tracker.ts';
@@ -152,12 +152,12 @@ describe('useRenderDiagnostics composable', () => {
     wrapper.unmount();
   });
 
-  it('provides metrics when plugin is installed', async () => {
+  it('provides metrics immediately after mount', () => {
     const TestComp = defineComponent({
       name: 'ComposableTest',
       setup() {
-        const { metrics, issues, flush } = useRenderDiagnostics();
-        return { metrics, issues, flush };
+        const { metrics, issues } = useRenderDiagnostics();
+        return { metrics, issues };
       },
       template: '<div />',
     });
@@ -168,10 +168,39 @@ describe('useRenderDiagnostics composable', () => {
       },
     });
 
-    wrapper.unmount();
-    await flushPromises();
-
+    // metrics available right after mount, before unmount
     expect(wrapper.vm.metrics).not.toBeNull();
     expect(wrapper.vm.metrics!.mountTimeMs).toBeGreaterThanOrEqual(0);
+    wrapper.unmount();
+  });
+
+  it('updates metrics reactively on each update', async () => {
+    const TestComp = defineComponent({
+      name: 'ReactiveTest',
+      setup() {
+        const { metrics, issues } = useRenderDiagnostics();
+        const count = ref(0);
+        return { metrics, issues, count };
+      },
+      template: '<div>{{ count }}</div>',
+    });
+
+    const wrapper = mount(TestComp, {
+      global: {
+        plugins: [[VueRenderDiagnostics, { logToConsole: false }]],
+      },
+    });
+
+    expect(wrapper.vm.metrics!.updateCount).toBe(0);
+
+    wrapper.vm.count = 1;
+    await nextTick();
+    expect(wrapper.vm.metrics!.updateCount).toBe(1);
+
+    wrapper.vm.count = 2;
+    await nextTick();
+    expect(wrapper.vm.metrics!.updateCount).toBe(2);
+
+    wrapper.unmount();
   });
 });
