@@ -1,82 +1,54 @@
-import {
-  inject,
-  ref,
-  onBeforeMount,
-  onMounted,
-  onBeforeUpdate,
-  onUpdated,
-  onUnmounted,
-  getCurrentInstance,
-} from 'vue';
-import type { Ref } from 'vue';
+import { inject, shallowRef, onMounted, onUpdated, getCurrentInstance } from 'vue';
+import type { ShallowRef } from 'vue';
 import type { VRTComponentLog, VRTIssue, VRTMetrics } from '../types.ts';
 import { VRT_COLLECTOR_KEY } from '../constants.ts';
-import { measurePaint } from '../core/timer.ts';
-import { countNodes } from '../utils/dom.ts';
 
 export interface UseRenderDiagnosticsReturn {
-  metrics: Readonly<Ref<VRTMetrics | null>>;
-  issues: Readonly<Ref<VRTIssue[]>>;
+  metrics: Readonly<ShallowRef<VRTMetrics | null>>;
+  issues: Readonly<ShallowRef<VRTIssue[]>>;
   flush: () => VRTComponentLog | null;
 }
 
-export function useRenderDiagnostics(componentName?: string): UseRenderDiagnosticsReturn {
+export function useRenderDiagnostics(_componentName?: string): UseRenderDiagnosticsReturn {
   const collector = inject(VRT_COLLECTOR_KEY);
-  const metrics = ref<VRTMetrics | null>(null);
-  const issues = ref<VRTIssue[]>([]);
+  const metrics = shallowRef<VRTMetrics | null>(null);
+  const issues = shallowRef<VRTIssue[]>([]);
 
   if (!collector) {
-    return {
-      metrics,
-      issues,
-      flush: () => null,
-    };
+    return { metrics, issues, flush: () => null };
   }
 
-  // Assigned to const after null check so closures below can reference it safely
   const c = collector;
   const instance = getCurrentInstance();
   const uid = instance?.uid ?? 0;
-  const name = componentName || instance?.type.__name || instance?.type.name || 'Anonymous';
 
-  function updateRefs(): void {
-    const snapshot = c.peek(uid);
-    if (snapshot) {
-      metrics.value = snapshot.metrics;
-      issues.value = snapshot.issues;
-    }
+  // Schedule ref update outside Vue's render cycle to prevent infinite loops.
+  // When metrics ref updates → template re-renders → onUpdated fires → scheduleRefUpdate →
+  // but the rAF runs AFTER Vue settles, so the next onUpdated correctly tracks a real user update.
+  let rafPending = false;
+
+  function scheduleRefUpdate(): void {
+    if (rafPending) return;
+    rafPending = true;
+    requestAnimationFrame(() => {
+      rafPending = false;
+      const snapshot = c.peek(uid);
+      if (snapshot) {
+        metrics.value = snapshot.metrics;
+        issues.value = snapshot.issues;
+      }
+    });
   }
 
-  onBeforeMount(() => {
-    c.trackMountStart(name, uid);
-  });
+  // The global mixin handles all lifecycle tracking (trackMountStart/End, trackUpdateStart/End, etc.)
+  // This composable only reads from the collector via peek() — no duplicate tracking.
 
   onMounted(() => {
-    c.trackMountEnd(uid);
-    c.trackNodeCount(uid, countNodes(instance?.proxy?.$el));
-    measurePaint((paintMs) => {
-      c.trackPaint(uid, paintMs);
-      updateRefs();
-    });
-    updateRefs();
-  });
-
-  onBeforeUpdate(() => {
-    c.trackUpdateStart(uid);
+    scheduleRefUpdate();
   });
 
   onUpdated(() => {
-    c.trackUpdateEnd(uid);
-    c.trackNodeCount(uid, countNodes(instance?.proxy?.$el));
-    updateRefs();
-  });
-
-  onUnmounted(() => {
-    const log = c.flush(uid);
-    if (log) {
-      metrics.value = log.metrics;
-      issues.value = log.issues;
-    }
+    scheduleRefUpdate();
   });
 
   const flush = (): VRTComponentLog | null => {

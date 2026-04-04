@@ -55,35 +55,6 @@ describe('VueRenderDiagnostics plugin', () => {
     expect(componentLogs[0].metrics.mountTimeMs).toBeGreaterThanOrEqual(0);
   });
 
-  it('tracks update metrics via composable', async () => {
-    const TestComp = defineComponent({
-      name: 'UpdateTracker',
-      setup() {
-        const { metrics } = useRenderDiagnostics();
-        const count = ref(0);
-        return { metrics, count };
-      },
-      template: '<div>{{ count }}</div>',
-    });
-
-    const wrapper = mount(TestComp, {
-      global: {
-        plugins: [[VueRenderDiagnostics, { logToConsole: false }]],
-      },
-    });
-
-    wrapper.vm.count = 1;
-    await nextTick();
-    expect(wrapper.vm.metrics!.updateCount).toBe(1);
-
-    wrapper.vm.count = 2;
-    await nextTick();
-    expect(wrapper.vm.metrics!.updateCount).toBe(2);
-    expect(wrapper.vm.metrics!.avgUpdateMs).toBeGreaterThanOrEqual(0);
-
-    wrapper.unmount();
-  });
-
   it('does not track when enabled is false', async () => {
     const logs: VRTComponentLog[] = [];
     const wrapper = mountWithPlugin(SimpleComponent, {
@@ -153,7 +124,6 @@ describe('VueRenderDiagnostics plugin', () => {
 
     wrapper.unmount();
 
-    // no additional log emitted on unmount
     expect(logs).toHaveLength(mountLogs);
   });
 });
@@ -161,10 +131,12 @@ describe('VueRenderDiagnostics plugin', () => {
 describe('useRenderDiagnostics composable', () => {
   beforeEach(() => {
     clearFilterCache();
+    vi.useFakeTimers();
     vi.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
@@ -183,7 +155,7 @@ describe('useRenderDiagnostics composable', () => {
     wrapper.unmount();
   });
 
-  it('provides metrics immediately after mount', () => {
+  it('provides metrics after rAF', async () => {
     const TestComp = defineComponent({
       name: 'ComposableTest',
       setup() {
@@ -199,6 +171,10 @@ describe('useRenderDiagnostics composable', () => {
       },
     });
 
+    expect(wrapper.vm.metrics).toBeNull();
+
+    await flushRaf();
+
     expect(wrapper.vm.metrics).not.toBeNull();
     expect(wrapper.vm.metrics!.mountTimeMs).toBeGreaterThanOrEqual(0);
     wrapper.unmount();
@@ -208,9 +184,9 @@ describe('useRenderDiagnostics composable', () => {
     const TestComp = defineComponent({
       name: 'ReactiveTest',
       setup() {
-        const { metrics, issues } = useRenderDiagnostics();
+        const { metrics } = useRenderDiagnostics();
         const count = ref(0);
-        return { metrics, issues, count };
+        return { metrics, count };
       },
       template: '<div>{{ count }}</div>',
     });
@@ -221,14 +197,17 @@ describe('useRenderDiagnostics composable', () => {
       },
     });
 
+    await flushRaf();
     expect(wrapper.vm.metrics!.updateCount).toBe(0);
 
     wrapper.vm.count = 1;
     await nextTick();
+    await flushRaf();
     expect(wrapper.vm.metrics!.updateCount).toBe(1);
 
     wrapper.vm.count = 2;
     await nextTick();
+    await flushRaf();
     expect(wrapper.vm.metrics!.updateCount).toBe(2);
 
     wrapper.unmount();
