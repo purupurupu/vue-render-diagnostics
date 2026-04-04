@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { defineComponent, nextTick, ref } from 'vue';
+import { defineComponent } from 'vue';
 import { VueRenderDiagnostics } from '../plugin/install.ts';
 import { useRenderDiagnostics } from '../composables/useRenderDiagnostics.ts';
 import { clearFilterCache } from '../plugin/lifecycle-tracker.ts';
@@ -140,76 +140,47 @@ describe('useRenderDiagnostics composable', () => {
     vi.restoreAllMocks();
   });
 
-  it('returns null metrics without plugin installed', () => {
+  it('does nothing without plugin installed', () => {
     const TestComp = defineComponent({
       setup() {
-        const { metrics, issues } = useRenderDiagnostics();
-        return { metrics, issues };
+        useRenderDiagnostics();
       },
       template: '<div />',
     });
 
+    // Should not throw
     const wrapper = mount(TestComp);
-    expect(wrapper.vm.metrics).toBeNull();
-    expect(wrapper.vm.issues).toEqual([]);
     wrapper.unmount();
   });
 
-  it('provides metrics after rAF', async () => {
-    const TestComp = defineComponent({
-      name: 'ComposableTest',
+  it('opts in a component that would be excluded by filters', async () => {
+    const logs: VRTComponentLog[] = [];
+
+    const TrackedComp = defineComponent({
+      name: 'TrackedComp',
       setup() {
-        const { metrics, issues } = useRenderDiagnostics();
-        return { metrics, issues };
+        useRenderDiagnostics();
       },
       template: '<div />',
     });
 
-    const wrapper = mount(TestComp, {
+    mount(TrackedComp, {
       global: {
-        plugins: [[VueRenderDiagnostics, { logToConsole: false }]],
-      },
-    });
-
-    expect(wrapper.vm.metrics).toBeNull();
-
-    await flushRaf();
-
-    expect(wrapper.vm.metrics).not.toBeNull();
-    expect(wrapper.vm.metrics!.mountTimeMs).toBeGreaterThanOrEqual(0);
-    wrapper.unmount();
-  });
-
-  it('updates metrics reactively on each update', async () => {
-    const TestComp = defineComponent({
-      name: 'ReactiveTest',
-      setup() {
-        const { metrics } = useRenderDiagnostics();
-        const count = ref(0);
-        return { metrics, count };
-      },
-      template: '<div>{{ count }}</div>',
-    });
-
-    const wrapper = mount(TestComp, {
-      global: {
-        plugins: [[VueRenderDiagnostics, { logToConsole: false }]],
+        plugins: [
+          [
+            VueRenderDiagnostics,
+            {
+              include: ['SomethingElse'],
+              onLog: (log: VRTComponentLog) => logs.push(log),
+            },
+          ],
+        ],
       },
     });
 
     await flushRaf();
-    expect(wrapper.vm.metrics!.updateCount).toBe(0);
 
-    wrapper.vm.count = 1;
-    await nextTick();
-    await flushRaf();
-    expect(wrapper.vm.metrics!.updateCount).toBe(1);
-
-    wrapper.vm.count = 2;
-    await nextTick();
-    await flushRaf();
-    expect(wrapper.vm.metrics!.updateCount).toBe(2);
-
-    wrapper.unmount();
+    const componentLogs = logsFor(logs, 'TrackedComp');
+    expect(componentLogs).toHaveLength(1);
   });
 });
