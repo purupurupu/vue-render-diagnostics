@@ -10,6 +10,10 @@ export function startTimer(): TimerHandle {
 }
 
 export function measurePaint(callback: (paintTimeMs: number) => void): void {
+  if (typeof requestAnimationFrame === 'undefined') {
+    callback(0);
+    return;
+  }
   const start = performance.now();
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
