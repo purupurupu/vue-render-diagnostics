@@ -9,9 +9,9 @@ export const VRT_COLLECTOR_KEY: InjectionKey<Collector> = Symbol('vrt-collector'
 export const VRT_CONTEXT_KEY: InjectionKey<VRTContext> = Symbol('vrt-context');
 
 export const DEFAULT_THRESHOLDS: VRTThresholds = {
-  mountTimeMs: 50,
+  mountTimeMs: 100,
   updateTimeMs: 16,
-  paintTimeMs: 50,
-  nodeCount: 1000,
-  updateCount: 20,
+  paintTimeMs: 100,
+  nodeCount: 1500,
+  updateCount: 50,
 };

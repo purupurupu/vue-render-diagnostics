@@ -39,11 +39,11 @@ app.use(VueRenderDiagnostics, {
   logLevel: 'all', // console output filter — onLog still receives all logs
   updateLogInterval: 10, // emit snapshot every 10 updates (default: disabled)
   thresholds: {
-    mountTimeMs: 50, // default: 50
+    mountTimeMs: 100, // default: 100
     updateTimeMs: 16, // default: 16 (one frame at 60fps)
-    paintTimeMs: 50, // default: 50
-    nodeCount: 1000, // default: 1000
-    updateCount: 20, // default: 20
+    paintTimeMs: 100, // default: 100
+    nodeCount: 1500, // default: 1500
+    updateCount: 50, // default: 50
   },
   onLog: (log) => {
     // Called for ALL logs regardless of logLevel
