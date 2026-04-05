@@ -21,7 +21,8 @@ export type VRTIssueSeverity = 'info' | 'warn' | 'error';
 
 export type VRTIssueId =
   | 'slow-mount'
-  | 'slow-update'
+  | 'slow-update-avg'
+  | 'slow-update-max'
   | 'slow-paint'
   | 'large-dom'
   | 'excessive-updates';

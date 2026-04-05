@@ -27,7 +27,7 @@ export function detectIssues(metrics: VRTMetrics, thresholds: VRTThresholds): VR
   if (metrics.avgUpdateMs > thresholds.updateTimeMs) {
     const { severity, threshold } = classify(metrics.avgUpdateMs, thresholds.updateTimeMs);
     issues.push({
-      id: 'slow-update',
+      id: 'slow-update-avg',
       severity,
       metric: 'avgUpdateMs',
       value: metrics.avgUpdateMs,
@@ -37,7 +37,7 @@ export function detectIssues(metrics: VRTMetrics, thresholds: VRTThresholds): VR
 
   if (metrics.maxUpdateMs > thresholds.updateTimeMs * 2) {
     issues.push({
-      id: 'slow-update',
+      id: 'slow-update-max',
       severity: 'error',
       metric: 'maxUpdateMs',
       value: metrics.maxUpdateMs,
