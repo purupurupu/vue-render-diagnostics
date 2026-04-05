@@ -16,8 +16,8 @@ function makeLog(overrides: Partial<VRTComponentLog> = {}): VRTComponentLog {
       nodeCount: 100,
     },
     signals: {
-      hasAsyncInSetup: false,
       dataUpdateDetected: false,
+      clockSkewDetected: false,
     },
     issues: [],
     ...overrides,

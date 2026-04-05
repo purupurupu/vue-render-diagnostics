@@ -97,15 +97,16 @@ Returns `null` if the plugin is not installed. The `peek()` method returns a rea
     "nodeCount": 1200
   },
   "signals": {
-    "hasAsyncInSetup": true,
-    "dataUpdateDetected": true
+    "dataUpdateDetected": true,
+    "clockSkewDetected": false
   },
   "issues": [
     {
       "id": "slow-mount",
       "severity": "warn",
       "metric": "mountTimeMs",
-      "value": 120
+      "value": 120,
+      "threshold": 50
     }
   ]
 }
