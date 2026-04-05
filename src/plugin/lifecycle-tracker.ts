@@ -41,7 +41,9 @@ function shouldTrack(instance: VueInstance, context: VRTContext): boolean {
     }
   }
 
-  context.filterCache.set(name, result);
+  if (!name.startsWith('Anonymous#')) {
+    context.filterCache.set(name, result);
+  }
   return result;
 }
 
