@@ -9,15 +9,32 @@ export function startTimer(): TimerHandle {
   };
 }
 
-export function measurePaint(callback: (paintTimeMs: number) => void): void {
+export interface PaintHandle {
+  cancel: () => void;
+}
+
+export function measurePaint(callback: (paintTimeMs: number) => void): PaintHandle {
   if (typeof requestAnimationFrame === 'undefined') {
-    callback(0);
-    return;
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) callback(0);
+    });
+    return {
+      cancel: () => {
+        cancelled = true;
+      },
+    };
   }
+  let cancelled = false;
   const start = performance.now();
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      callback(performance.now() - start);
+      if (!cancelled) callback(performance.now() - start);
     });
   });
+  return {
+    cancel: () => {
+      cancelled = true;
+    },
+  };
 }
