@@ -123,9 +123,41 @@ Returns `null` if the plugin is not installed. The `peek()` method returns a rea
 }
 ```
 
+## What This Plugin Does (and Doesn't Do)
+
+VRD is a **problem detection tool**, not a profiler. It tells you **which** components are slow — not **why**.
+
+| VRD can do                               | VRD cannot do                                        |
+| ---------------------------------------- | ---------------------------------------------------- |
+| Detect slow mounts/updates automatically | Tell you whether setup() or template render is slow  |
+| Flag components exceeding thresholds     | Separate parent's own time from child component time |
+| Emit structured logs for AI analysis     | Replace Chrome DevTools Performance panel            |
+| Detect regressions in CI via `onLog`     | Track async data fetching time                       |
+
+**Recommended workflow:**
+
+1. Enable VRD in development → console shows `[VRD]` logs for slow components
+2. Feed logs to Claude / MCP → get code-level optimization suggestions
+3. Use Chrome DevTools for deep profiling of specific components
+
+## What Each Metric Measures
+
+| Metric        | Start          | End              | Includes                                                    |
+| ------------- | -------------- | ---------------- | ----------------------------------------------------------- |
+| `mountTimeMs` | `beforeMount`  | `mounted`        | setup(), template render, **all descendant mounts**         |
+| `paintTimeMs` | `mounted`      | 2nd rAF callback | Browser layout/paint queue wait (proxy for time-to-visible) |
+| `avgUpdateMs` | `beforeUpdate` | `updated`        | Reactive DOM patch, **descendant updates**                  |
+| `nodeCount`   | `mounted`      | —                | All descendant Elements under `$el`                         |
+
+> **Note:** `mountTimeMs` includes child component time. A slow parent may be caused by a slow child. Compare individual component logs to isolate the bottleneck.
+
+> **Note:** `paintTimeMs` is a time-to-visible proxy, not actual pixel paint duration. Components mounting simultaneously will report similar values.
+
 ## Known Limitations
 
-- **Fragment components report `nodeCount: 0`** — components with multiple root nodes (fragments) set `$el` to a Text/Comment node, not an Element. DOM node counting is skipped for these components. Single-root components work correctly.
+- **Fragment components report `nodeCount: 0`** — components with multiple root nodes (fragments) set `$el` to a Text/Comment node, not an Element
+- **`paintTimeMs` is shared across co-mounting components** — it measures rAF delay, which is affected by all work in the same frame
+- **Async data fetch is not tracked** — only synchronous mount/update time is measured; fetch-then-render patterns show up in subsequent `updated` logs
 
 ## MCP Integration
 
@@ -137,9 +169,9 @@ Logs use the `[VRD]` prefix for easy extraction by AI tools:
 
 ## Design Philosophy
 
-Logs are **data for AI to understand**, not text for humans to read.
+VRD is **data for AI to understand**, not a dashboard for humans to stare at.
 
-- Fully structured JSON
+- Fully structured JSON — parse without regex
 - ID-based (no natural language in keys)
 - Explicit units (ms suffix)
 - Flat, extractable structure
