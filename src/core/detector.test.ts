@@ -23,50 +23,72 @@ describe('detectIssues', () => {
     expect(issues).toEqual([]);
   });
 
-  it('detects slow-mount as warn when above threshold', () => {
+  it('detects slow-mount as warn with threshold value', () => {
     const issues = detectIssues(makeMetrics({ mountTimeMs: 80 }), thresholds);
     expect(issues).toContainEqual(
-      expect.objectContaining({ id: 'slow-mount', severity: 'warn', value: 80 }),
+      expect.objectContaining({ id: 'slow-mount', severity: 'warn', value: 80, threshold: 50 }),
     );
   });
 
-  it('detects slow-mount as error when above 2x threshold', () => {
+  it('detects slow-mount as error with 2x threshold value', () => {
     const issues = detectIssues(makeMetrics({ mountTimeMs: 120 }), thresholds);
     expect(issues).toContainEqual(
-      expect.objectContaining({ id: 'slow-mount', severity: 'error', value: 120 }),
+      expect.objectContaining({
+        id: 'slow-mount',
+        severity: 'error',
+        value: 120,
+        threshold: 100,
+      }),
     );
   });
 
-  it('detects slow-update from avgUpdateMs', () => {
+  it('detects slow-update from avgUpdateMs with threshold', () => {
     const issues = detectIssues(makeMetrics({ avgUpdateMs: 20 }), thresholds);
     expect(issues).toContainEqual(
-      expect.objectContaining({ id: 'slow-update', metric: 'avgUpdateMs', severity: 'warn' }),
+      expect.objectContaining({
+        id: 'slow-update',
+        metric: 'avgUpdateMs',
+        severity: 'warn',
+        threshold: 16,
+      }),
     );
   });
 
-  it('detects slow-update as error from maxUpdateMs above 2x threshold', () => {
+  it('detects slow-update as error from maxUpdateMs with 2x threshold', () => {
     const issues = detectIssues(makeMetrics({ maxUpdateMs: 40 }), thresholds);
     expect(issues).toContainEqual(
-      expect.objectContaining({ id: 'slow-update', metric: 'maxUpdateMs', severity: 'error' }),
+      expect.objectContaining({
+        id: 'slow-update',
+        metric: 'maxUpdateMs',
+        severity: 'error',
+        threshold: 32,
+      }),
     );
   });
 
-  it('detects slow-paint', () => {
+  it('detects slow-paint with threshold', () => {
     const issues = detectIssues(makeMetrics({ paintTimeMs: 60 }), thresholds);
-    expect(issues).toContainEqual(expect.objectContaining({ id: 'slow-paint', severity: 'warn' }));
+    expect(issues).toContainEqual(
+      expect.objectContaining({ id: 'slow-paint', severity: 'warn', threshold: 50 }),
+    );
   });
 
-  it('detects large-dom', () => {
+  it('detects large-dom with threshold', () => {
     const issues = detectIssues(makeMetrics({ nodeCount: 1200 }), thresholds);
     expect(issues).toContainEqual(
-      expect.objectContaining({ id: 'large-dom', severity: 'warn', value: 1200 }),
+      expect.objectContaining({
+        id: 'large-dom',
+        severity: 'warn',
+        value: 1200,
+        threshold: 1000,
+      }),
     );
   });
 
-  it('detects excessive-updates', () => {
+  it('detects excessive-updates with threshold', () => {
     const issues = detectIssues(makeMetrics({ updateCount: 25 }), thresholds);
     expect(issues).toContainEqual(
-      expect.objectContaining({ id: 'excessive-updates', severity: 'warn' }),
+      expect.objectContaining({ id: 'excessive-updates', severity: 'warn', threshold: 20 }),
     );
   });
 
@@ -76,5 +98,13 @@ describe('detectIssues', () => {
       thresholds,
     );
     expect(issues).toHaveLength(3);
+  });
+
+  it('uses custom thresholds in threshold field', () => {
+    const custom: VRTThresholds = { ...DEFAULT_THRESHOLDS, mountTimeMs: 30 };
+    const issues = detectIssues(makeMetrics({ mountTimeMs: 40 }), custom);
+    expect(issues).toContainEqual(
+      expect.objectContaining({ id: 'slow-mount', severity: 'warn', threshold: 30 }),
+    );
   });
 });

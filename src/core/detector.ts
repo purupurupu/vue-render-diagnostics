@@ -1,23 +1,37 @@
-import type { VRTIssue, VRTMetrics, VRTThresholds } from '../types.ts';
+import type { VRTIssue, VRTIssueSeverity, VRTMetrics, VRTThresholds } from '../types.ts';
+
+function classify(
+  value: number,
+  warnThreshold: number,
+): { severity: VRTIssueSeverity; threshold: number } {
+  const errorThreshold = warnThreshold * 2;
+  return value > errorThreshold
+    ? { severity: 'error', threshold: errorThreshold }
+    : { severity: 'warn', threshold: warnThreshold };
+}
 
 export function detectIssues(metrics: VRTMetrics, thresholds: VRTThresholds): VRTIssue[] {
   const issues: VRTIssue[] = [];
 
   if (metrics.mountTimeMs > thresholds.mountTimeMs) {
+    const { severity, threshold } = classify(metrics.mountTimeMs, thresholds.mountTimeMs);
     issues.push({
       id: 'slow-mount',
-      severity: metrics.mountTimeMs > thresholds.mountTimeMs * 2 ? 'error' : 'warn',
+      severity,
       metric: 'mountTimeMs',
       value: metrics.mountTimeMs,
+      threshold,
     });
   }
 
   if (metrics.avgUpdateMs > thresholds.updateTimeMs) {
+    const { severity, threshold } = classify(metrics.avgUpdateMs, thresholds.updateTimeMs);
     issues.push({
       id: 'slow-update',
-      severity: metrics.avgUpdateMs > thresholds.updateTimeMs * 2 ? 'error' : 'warn',
+      severity,
       metric: 'avgUpdateMs',
       value: metrics.avgUpdateMs,
+      threshold,
     });
   }
 
@@ -27,33 +41,40 @@ export function detectIssues(metrics: VRTMetrics, thresholds: VRTThresholds): VR
       severity: 'error',
       metric: 'maxUpdateMs',
       value: metrics.maxUpdateMs,
+      threshold: thresholds.updateTimeMs * 2,
     });
   }
 
   if (metrics.paintTimeMs > thresholds.paintTimeMs) {
+    const { severity, threshold } = classify(metrics.paintTimeMs, thresholds.paintTimeMs);
     issues.push({
       id: 'slow-paint',
-      severity: metrics.paintTimeMs > thresholds.paintTimeMs * 2 ? 'error' : 'warn',
+      severity,
       metric: 'paintTimeMs',
       value: metrics.paintTimeMs,
+      threshold,
     });
   }
 
   if (metrics.nodeCount > thresholds.nodeCount) {
+    const { severity, threshold } = classify(metrics.nodeCount, thresholds.nodeCount);
     issues.push({
       id: 'large-dom',
-      severity: metrics.nodeCount > thresholds.nodeCount * 2 ? 'error' : 'warn',
+      severity,
       metric: 'nodeCount',
       value: metrics.nodeCount,
+      threshold,
     });
   }
 
   if (metrics.updateCount > thresholds.updateCount) {
+    const { severity, threshold } = classify(metrics.updateCount, thresholds.updateCount);
     issues.push({
       id: 'excessive-updates',
-      severity: metrics.updateCount > thresholds.updateCount * 2 ? 'error' : 'warn',
+      severity,
       metric: 'updateCount',
       value: metrics.updateCount,
+      threshold,
     });
   }
 
