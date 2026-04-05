@@ -30,6 +30,7 @@ app.use(VueRenderDiagnostics, {
   include: ['UserList', 'Header'], // track only these components (string[] or RegExp)
   exclude: /^Internal/, // skip matching components (string[] or RegExp)
   logToConsole: true, // default: true
+  logLevel: 'all', // 'all' | 'issues' | 'warn' | 'error' | 'silent'
   updateLogInterval: 10, // emit snapshot every 10 updates (default: disabled)
   thresholds: {
     mountTimeMs: 50, // default: 50
