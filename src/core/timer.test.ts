@@ -59,4 +59,28 @@ describe('measurePaint', () => {
       vi.unstubAllGlobals();
     }
   });
+
+  it('suppresses callback when cancelled before rAF fires', async () => {
+    const callback = vi.fn();
+    const handle = measurePaint(callback);
+
+    handle.cancel();
+
+    await vi.advanceTimersToNextFrame();
+    await vi.advanceTimersToNextFrame();
+
+    expect(callback).not.toHaveBeenCalled();
+  });
+
+  it('returns a no-op cancel handle when rAF is unavailable', () => {
+    vi.stubGlobal('requestAnimationFrame', undefined);
+    try {
+      const callback = vi.fn();
+      const handle = measurePaint(callback);
+      expect(callback).toHaveBeenCalledOnce();
+      handle.cancel();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });
