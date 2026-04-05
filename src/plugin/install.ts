@@ -8,7 +8,15 @@ import { createLifecycleTracker } from './lifecycle-tracker.ts';
 export const VueRenderDiagnostics: Plugin<[VRTPluginOptions?]> = {
   install(app, options: VRTPluginOptions = {}) {
     if (options.enabled === false) return;
-    if (options.enabled === undefined && !import.meta.env.DEV) return;
+    if (options.enabled === undefined) {
+      // Use process.env.NODE_ENV instead of import.meta.env.DEV to avoid
+      // a Vite-specific dependency that breaks Webpack, esbuild, and Node SSR.
+      try {
+        if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'production') return;
+      } catch {
+        // Non-Node environment (e.g. browser without bundler define) — continue
+      }
+    }
 
     const collector = new Collector(options.thresholds);
     const context = createVRTContext(collector, options);
