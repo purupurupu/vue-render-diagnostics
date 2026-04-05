@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { emitLog } from './logger.ts';
-import type { VRTComponentLog, VRTIssue } from '../types.ts';
+import type { VRDComponentLog, VRDIssue } from '../types.ts';
 
-function makeLog(overrides: Partial<VRTComponentLog> = {}): VRTComponentLog {
+function makeLog(overrides: Partial<VRDComponentLog> = {}): VRDComponentLog {
   return {
     type: 'vrt:component',
     component: 'TestComponent',
@@ -24,7 +24,7 @@ function makeLog(overrides: Partial<VRTComponentLog> = {}): VRTComponentLog {
   };
 }
 
-function makeIssue(severity: 'info' | 'warn' | 'error'): VRTIssue {
+function makeIssue(severity: 'info' | 'warn' | 'error'): VRDIssue {
   return { id: 'slow-mount', severity, metric: 'mountTimeMs', value: 100, threshold: 50 };
 }
 
@@ -33,13 +33,13 @@ describe('emitLog', () => {
     vi.restoreAllMocks();
   });
 
-  it('logs with [VRT] prefix and JSON by default', () => {
+  it('logs with [VRD] prefix and JSON by default', () => {
     const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const log = makeLog();
     emitLog(log, {});
 
     expect(spy).toHaveBeenCalledOnce();
-    expect(spy).toHaveBeenCalledWith('[VRT]', JSON.stringify(log));
+    expect(spy).toHaveBeenCalledWith('[VRD]', JSON.stringify(log));
   });
 
   it('does not log to console when logToConsole is false', () => {

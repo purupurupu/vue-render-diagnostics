@@ -1,17 +1,17 @@
-import type { VRTIssue, VRTIssueSeverity, VRTMetrics, VRTThresholds } from '../types.ts';
+import type { VRDIssue, VRDIssueSeverity, VRDMetrics, VRDThresholds } from '../types.ts';
 
 function classify(
   value: number,
   warnThreshold: number,
-): { severity: VRTIssueSeverity; threshold: number } {
+): { severity: VRDIssueSeverity; threshold: number } {
   const errorThreshold = warnThreshold * 2;
   return value > errorThreshold
     ? { severity: 'error', threshold: errorThreshold }
     : { severity: 'warn', threshold: warnThreshold };
 }
 
-export function detectIssues(metrics: VRTMetrics, thresholds: VRTThresholds): VRTIssue[] {
-  const issues: VRTIssue[] = [];
+export function detectIssues(metrics: VRDMetrics, thresholds: VRDThresholds): VRDIssue[] {
+  const issues: VRDIssue[] = [];
 
   if (metrics.mountTimeMs > thresholds.mountTimeMs) {
     const { severity, threshold } = classify(metrics.mountTimeMs, thresholds.mountTimeMs);

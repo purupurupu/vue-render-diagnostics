@@ -1,4 +1,4 @@
-import type { VRTComponentLog, VRTMetrics, VRTSignals, VRTThresholds } from '../types.ts';
+import type { VRDComponentLog, VRDMetrics, VRDSignals, VRDThresholds } from '../types.ts';
 import type { TimerHandle } from './timer.ts';
 import { DEFAULT_THRESHOLDS } from '../constants.ts';
 import { detectIssues } from './detector.ts';
@@ -19,9 +19,9 @@ interface ComponentTracker {
 
 export class Collector {
   private trackers = new Map<number, ComponentTracker>();
-  private thresholds: VRTThresholds;
+  private thresholds: VRDThresholds;
 
-  constructor(thresholds?: Partial<VRTThresholds>) {
+  constructor(thresholds?: Partial<VRDThresholds>) {
     this.thresholds = { ...DEFAULT_THRESHOLDS, ...thresholds };
   }
 
@@ -89,21 +89,21 @@ export class Collector {
     return this.trackers.get(uid)?.updateCount ?? 0;
   }
 
-  peek(uid: number): VRTComponentLog | null {
+  peek(uid: number): VRDComponentLog | null {
     const tracker = this.trackers.get(uid);
     if (!tracker) return null;
     return this.buildLog(tracker);
   }
 
-  flush(uid: number): VRTComponentLog | null {
+  flush(uid: number): VRDComponentLog | null {
     const tracker = this.trackers.get(uid);
     if (!tracker) return null;
     this.trackers.delete(uid);
     return this.buildLog(tracker);
   }
 
-  private buildLog(tracker: ComponentTracker): VRTComponentLog {
-    const metrics: VRTMetrics = {
+  private buildLog(tracker: ComponentTracker): VRDComponentLog {
+    const metrics: VRDMetrics = {
       mountTimeMs: tracker.mountTimeMs ?? 0,
       paintTimeMs: tracker.paintTimeMs ?? 0,
       updateCount: tracker.updateCount,
@@ -112,7 +112,7 @@ export class Collector {
       nodeCount: tracker.nodeCount,
     };
 
-    const signals: VRTSignals = {
+    const signals: VRDSignals = {
       dataUpdateDetected: tracker.updateCount > 0,
       clockSkewDetected: tracker.clockSkewDetected,
     };

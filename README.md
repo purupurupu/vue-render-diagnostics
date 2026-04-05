@@ -30,7 +30,7 @@ The plugin is disabled by default to prevent accidental production overhead. For
 app.use(VueRenderDiagnostics, { enabled: import.meta.env.DEV });
 ```
 
-Open your browser console — you'll see `[VRT]` prefixed JSON logs when components mount.
+Open your browser console — you'll see `[VRD]` prefixed JSON logs when components mount.
 
 ### Plugin Options
 
@@ -96,7 +96,7 @@ Returns `null` if the plugin is not installed. The `peek()` method returns a rea
 
 ```json
 {
-  "type": "vrt:component",
+  "type": "vrd:component",
   "component": "UserList",
   "timestamp": 1710000000000,
   "metrics": {
@@ -129,9 +129,9 @@ Returns `null` if the plugin is not installed. The `peek()` method returns a rea
 
 ## MCP Integration
 
-Logs use the `[VRT]` prefix for easy extraction by AI tools:
+Logs use the `[VRD]` prefix for easy extraction by AI tools:
 
-1. Extract `[VRT]` prefixed lines from console output
+1. Extract `[VRD]` prefixed lines from console output
 2. Parse as JSON
 3. Analyze with Claude / Codex
 

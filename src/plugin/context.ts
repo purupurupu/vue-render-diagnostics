@@ -1,13 +1,13 @@
 import type { Collector } from '../core/collector.ts';
-import type { VRTPluginOptions } from '../types.ts';
+import type { VRDPluginOptions } from '../types.ts';
 
-export interface VRTContext {
+export interface VRDContext {
   readonly collector: Collector;
-  readonly options: VRTPluginOptions;
+  readonly options: VRDPluginOptions;
   readonly filterCache: Map<string, boolean>;
   readonly explicitlyTracked: Set<string>;
 }
 
-export function createVRTContext(collector: Collector, options: VRTPluginOptions): VRTContext {
+export function createVRDContext(collector: Collector, options: VRDPluginOptions): VRDContext {
   return { collector, options, filterCache: new Map(), explicitlyTracked: new Set() };
 }

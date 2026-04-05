@@ -1,5 +1,5 @@
 import type { ComponentOptions, ComponentPublicInstance } from 'vue';
-import type { VRTContext } from './context.ts';
+import type { VRDContext } from './context.ts';
 import type { PaintHandle } from '../core/timer.ts';
 import { measurePaint } from '../core/timer.ts';
 import { emitLog } from '../core/logger.ts';
@@ -13,7 +13,7 @@ import { resolveComponentName } from '../utils/component-name.ts';
  */
 type VueInstance = ComponentPublicInstance & { $: { uid: number } };
 
-function shouldTrack(instance: VueInstance, context: VRTContext): boolean {
+function shouldTrack(instance: VueInstance, context: VRDContext): boolean {
   const name = getComponentName(instance);
 
   if (context.explicitlyTracked.has(name)) return true;
@@ -51,7 +51,7 @@ function getComponentName(instance: VueInstance): string {
   return resolveComponentName(instance.$);
 }
 
-export function createLifecycleTracker(context: VRTContext): ComponentOptions {
+export function createLifecycleTracker(context: VRDContext): ComponentOptions {
   const { collector, options } = context;
   const pendingPaints = new Map<number, PaintHandle>();
 
