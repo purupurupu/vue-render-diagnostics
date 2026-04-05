@@ -107,6 +107,7 @@ describe('Collector', () => {
       signals: {
         hasAsyncInSetup: false,
         dataUpdateDetected: false,
+        clockSkewDetected: false,
       },
       issues: [],
     });
@@ -240,6 +241,7 @@ describe('Collector', () => {
     const log = collector.flush(1);
     expect(log!.metrics.updateCount).toBe(0);
     expect(log!.metrics.avgUpdateMs).toBe(0);
+    expect(log!.signals.clockSkewDetected).toBe(true);
   });
 
   it('handles sub-millisecond update durations without drift', () => {

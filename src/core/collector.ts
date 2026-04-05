@@ -14,6 +14,7 @@ interface ComponentTracker {
   maxUpdateMs: number;
   nodeCount: number;
   hasAsyncInSetup: boolean;
+  clockSkewDetected: boolean;
   updateTimer: TimerHandle | null;
 }
 
@@ -36,6 +37,7 @@ export class Collector {
       maxUpdateMs: 0,
       nodeCount: 0,
       hasAsyncInSetup: false,
+      clockSkewDetected: false,
       updateTimer: null,
     });
   }
@@ -45,7 +47,10 @@ export class Collector {
     if (!tracker?.mountTimer) return;
     const duration = tracker.mountTimer.stop();
     tracker.mountTimer = null;
-    if (duration < 0) return;
+    if (duration < 0) {
+      tracker.clockSkewDetected = true;
+      return;
+    }
     tracker.mountTimeMs = duration;
   }
 
@@ -58,6 +63,7 @@ export class Collector {
   trackUpdateStart(uid: number): void {
     const tracker = this.trackers.get(uid);
     if (!tracker) return;
+    if (tracker.updateTimer) tracker.updateTimer = null;
     tracker.updateTimer = startTimer();
   }
 
@@ -66,7 +72,10 @@ export class Collector {
     if (!tracker?.updateTimer) return;
     const duration = tracker.updateTimer.stop();
     tracker.updateTimer = null;
-    if (duration < 0) return;
+    if (duration < 0) {
+      tracker.clockSkewDetected = true;
+      return;
+    }
     tracker.updateCount++;
     tracker.totalUpdateMs += duration;
     if (duration > tracker.maxUpdateMs) tracker.maxUpdateMs = duration;
@@ -114,6 +123,7 @@ export class Collector {
     const signals: VRTSignals = {
       hasAsyncInSetup: tracker.hasAsyncInSetup,
       dataUpdateDetected: tracker.updateCount > 0,
+      clockSkewDetected: tracker.clockSkewDetected,
     };
 
     return {
