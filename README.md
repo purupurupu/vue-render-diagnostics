@@ -55,6 +55,25 @@ import { useRenderDiagnostics } from 'vue-render-diagnostics';
 useRenderDiagnostics();
 ```
 
+### Programmatic Metrics Access
+
+Query current metrics for a component at any time:
+
+```ts
+import { useRenderMetrics } from 'vue-render-diagnostics';
+
+// In setup()
+const metrics = useRenderMetrics();
+
+// Later (e.g., in an event handler or watcher)
+const log = metrics?.peek();
+if (log) {
+  console.log(log.metrics.updateCount);
+}
+```
+
+Returns `null` if the plugin is not installed. The `peek()` method returns a read-only snapshot of the current metrics, or `null` after the component unmounts.
+
 ## Log Emission Timing
 
 - **Mount completion** — emitted after paint measurement for every tracked component
