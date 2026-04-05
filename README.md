@@ -16,8 +16,14 @@ import { VueRenderDiagnostics } from 'vue-render-diagnostics';
 import App from './App.vue';
 
 const app = createApp(App);
-app.use(VueRenderDiagnostics);
+app.use(VueRenderDiagnostics, { enabled: true });
 app.mount('#app');
+```
+
+The plugin is disabled by default to prevent accidental production overhead. For dev-only activation with Vite:
+
+```ts
+app.use(VueRenderDiagnostics, { enabled: import.meta.env.DEV });
 ```
 
 Open your browser console — you'll see `[VRT]` prefixed JSON logs when components mount.
@@ -26,7 +32,7 @@ Open your browser console — you'll see `[VRT]` prefixed JSON logs when compone
 
 ```ts
 app.use(VueRenderDiagnostics, {
-  enabled: true, // default: true
+  enabled: true, // required — default is false (opt-in only)
   include: ['UserList', 'Header'], // track only these components (string[] or RegExp)
   exclude: /^Internal/, // skip matching components (string[] or RegExp)
   logToConsole: true, // default: true

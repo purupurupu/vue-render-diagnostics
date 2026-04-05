@@ -4,6 +4,7 @@ import App from './App.vue';
 
 const app = createApp(App);
 app.use(VueRenderDiagnostics, {
+  enabled: true,
   updateLogInterval: 5,
   onLog: (log) => {
     console.table(log.metrics);
