@@ -13,7 +13,7 @@ function mountWithPlugin<T extends Record<string, unknown>>(
   return mount(component, {
     props: options?.props,
     global: {
-      plugins: [[VueRenderDiagnostics, options?.pluginOptions ?? {}]],
+      plugins: [[VueRenderDiagnostics, { enabled: true, ...options?.pluginOptions }]],
     },
   });
 }
@@ -163,7 +163,11 @@ describe('VueRenderDiagnostics plugin', () => {
         plugins: [
           [
             VueRenderDiagnostics,
-            { updateLogInterval: 3, onLog: (log: VRTComponentLog) => logs.push(log) },
+            {
+              enabled: true,
+              updateLogInterval: 3,
+              onLog: (log: VRTComponentLog) => logs.push(log),
+            },
           ],
         ],
       },
@@ -205,7 +209,12 @@ describe('VueRenderDiagnostics plugin', () => {
 
     const wrapper = mount(Counter, {
       global: {
-        plugins: [[VueRenderDiagnostics, { onLog: (log: VRTComponentLog) => logs.push(log) }]],
+        plugins: [
+          [
+            VueRenderDiagnostics,
+            { enabled: true, onLog: (log: VRTComponentLog) => logs.push(log) },
+          ],
+        ],
       },
     });
 
@@ -267,6 +276,7 @@ describe('VueRenderDiagnostics plugin', () => {
           [
             VueRenderDiagnostics,
             {
+              enabled: true,
               include: /^Included/,
               exclude: /Excluded$/,
               onLog: (log: VRTComponentLog) => logs.push(log),
@@ -282,6 +292,7 @@ describe('VueRenderDiagnostics plugin', () => {
           [
             VueRenderDiagnostics,
             {
+              enabled: true,
               include: /^Included/,
               exclude: /Excluded$/,
               onLog: (log: VRTComponentLog) => logs.push(log),
@@ -326,7 +337,12 @@ describe('VueRenderDiagnostics plugin', () => {
 
     mount(AnonComp, {
       global: {
-        plugins: [[VueRenderDiagnostics, { onLog: (log: VRTComponentLog) => logs.push(log) }]],
+        plugins: [
+          [
+            VueRenderDiagnostics,
+            { enabled: true, onLog: (log: VRTComponentLog) => logs.push(log) },
+          ],
+        ],
       },
     });
 
@@ -399,7 +415,12 @@ describe('KeepAlive activated/deactivated hooks', () => {
 
     return mount(Wrapper, {
       global: {
-        plugins: [[VueRenderDiagnostics, { onLog: (log: VRTComponentLog) => logs.push(log) }]],
+        plugins: [
+          [
+            VueRenderDiagnostics,
+            { enabled: true, onLog: (log: VRTComponentLog) => logs.push(log) },
+          ],
+        ],
       },
     });
   }
@@ -564,7 +585,7 @@ describe('useRenderDiagnostics composable', () => {
 
     mount(AnonComp, {
       global: {
-        plugins: [[VueRenderDiagnostics]],
+        plugins: [[VueRenderDiagnostics, { enabled: true }]],
       },
     });
 
@@ -588,6 +609,7 @@ describe('useRenderDiagnostics composable', () => {
           [
             VueRenderDiagnostics,
             {
+              enabled: true,
               include: ['SomethingElse'],
               onLog: (log: VRTComponentLog) => logs.push(log),
             },

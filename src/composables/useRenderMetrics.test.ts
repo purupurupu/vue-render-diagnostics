@@ -50,7 +50,7 @@ describe('useRenderMetrics', () => {
 
     const wrapper = mount(Comp, {
       global: {
-        plugins: [[VueRenderDiagnostics]],
+        plugins: [[VueRenderDiagnostics, { enabled: true }]],
       },
     });
 
@@ -74,7 +74,7 @@ describe('useRenderMetrics', () => {
 
     const wrapper = mount(Comp, {
       global: {
-        plugins: [[VueRenderDiagnostics]],
+        plugins: [[VueRenderDiagnostics, { enabled: true }]],
       },
     });
 
@@ -104,7 +104,7 @@ describe('useRenderMetrics', () => {
 
     const wrapper = mount(Comp, {
       global: {
-        plugins: [[VueRenderDiagnostics]],
+        plugins: [[VueRenderDiagnostics, { enabled: true }]],
       },
     });
 
@@ -134,7 +134,7 @@ describe('useRenderMetrics', () => {
 
     const wrapper = mount(Comp, {
       global: {
-        plugins: [[VueRenderDiagnostics]],
+        plugins: [[VueRenderDiagnostics, { enabled: true }]],
       },
     });
 
@@ -160,7 +160,7 @@ describe('useRenderMetrics', () => {
 
     const wrapper = mount(Comp, {
       global: {
-        plugins: [[VueRenderDiagnostics]],
+        plugins: [[VueRenderDiagnostics, { enabled: true }]],
       },
     });
 
