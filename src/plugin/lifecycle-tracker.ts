@@ -9,7 +9,6 @@ type VueInstance = ComponentPublicInstance & { $: { uid: number } };
 
 function shouldTrack(instance: VueInstance, context: VRTContext): boolean {
   const name = getComponentName(instance);
-  if (!name) return false;
 
   if (context.explicitlyTracked.has(name)) return true;
 
@@ -40,8 +39,13 @@ function shouldTrack(instance: VueInstance, context: VRTContext): boolean {
   return result;
 }
 
-function getComponentName(instance: VueInstance): string | undefined {
-  return instance.$options.name || instance.$options.__name;
+function getComponentName(instance: VueInstance): string {
+  return (
+    instance.$options.name ||
+    instance.$options.__name ||
+    ((instance.$options as Record<string, unknown>).__file as string) ||
+    `Anonymous#${instance.$.uid}`
+  );
 }
 
 export function createLifecycleTracker(context: VRTContext): ComponentOptions {
