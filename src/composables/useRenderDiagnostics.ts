@@ -1,5 +1,6 @@
 import { getCurrentInstance, inject } from 'vue';
 import { VRT_CONTEXT_KEY } from '../constants.ts';
+import { resolveComponentName } from '../utils/component-name.ts';
 
 /**
  * Opt-in a component for VRT tracking.
@@ -13,9 +14,14 @@ export function useRenderDiagnostics(): void {
   const context = inject(VRT_CONTEXT_KEY);
   if (!context) return;
 
-  const name = instance.type.name || instance.type.__name;
-  if (name) {
-    context.explicitlyTracked.add(name);
-    context.filterCache.delete(name);
+  const name = resolveComponentName(instance);
+
+  if (name.startsWith('Anonymous#')) {
+    console.warn(
+      '[VRT] useRenderDiagnostics() called on a component without a name. Add a `name` option or use <script setup> for automatic name inference.',
+    );
   }
+
+  context.explicitlyTracked.add(name);
+  context.filterCache.delete(name);
 }

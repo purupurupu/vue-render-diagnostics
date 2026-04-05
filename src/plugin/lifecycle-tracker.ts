@@ -4,12 +4,12 @@ import type { PaintHandle } from '../core/timer.ts';
 import { measurePaint } from '../core/timer.ts';
 import { emitLog } from '../core/logger.ts';
 import { countNodes } from '../utils/dom.ts';
+import { resolveComponentName } from '../utils/component-name.ts';
 
 type VueInstance = ComponentPublicInstance & { $: { uid: number } };
 
 function shouldTrack(instance: VueInstance, context: VRTContext): boolean {
   const name = getComponentName(instance);
-  if (!name) return false;
 
   if (context.explicitlyTracked.has(name)) return true;
 
@@ -40,8 +40,8 @@ function shouldTrack(instance: VueInstance, context: VRTContext): boolean {
   return result;
 }
 
-function getComponentName(instance: VueInstance): string | undefined {
-  return instance.$options.name || instance.$options.__name;
+function getComponentName(instance: VueInstance): string {
+  return resolveComponentName(instance.$);
 }
 
 export function createLifecycleTracker(context: VRTContext): ComponentOptions {
@@ -61,7 +61,7 @@ export function createLifecycleTracker(context: VRTContext): ComponentOptions {
   return {
     beforeMount(this: VueInstance) {
       if (!shouldTrack(this, context)) return;
-      collector.trackMountStart(getComponentName(this)!, this.$.uid);
+      collector.trackMountStart(getComponentName(this), this.$.uid);
     },
     mounted(this: VueInstance) {
       if (!shouldTrack(this, context)) return;
@@ -91,7 +91,7 @@ export function createLifecycleTracker(context: VRTContext): ComponentOptions {
       if (!shouldTrack(this, context)) return;
       const uid = this.$.uid;
       if (collector.peek(uid)) return;
-      const name = getComponentName(this)!;
+      const name = getComponentName(this);
       collector.trackMountStart(name, uid);
       collector.trackMountEnd(uid);
       collector.trackNodeCount(uid, countNodes(this.$el));
