@@ -10,6 +10,7 @@ export interface VRTMetrics {
 export interface VRTSignals {
   hasAsyncInSetup: boolean;
   dataUpdateDetected: boolean;
+  clockSkewDetected: boolean;
 }
 
 export type VRTIssueSeverity = 'info' | 'warn' | 'error';
