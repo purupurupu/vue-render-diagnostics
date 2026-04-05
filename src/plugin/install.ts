@@ -8,6 +8,7 @@ import { createLifecycleTracker } from './lifecycle-tracker.ts';
 export const VueRenderDiagnostics: Plugin<[VRTPluginOptions?]> = {
   install(app, options: VRTPluginOptions = {}) {
     if (options.enabled === false) return;
+    if (options.enabled === undefined && !import.meta.env.DEV) return;
 
     const collector = new Collector(options.thresholds);
     const context = createVRTContext(collector, options);
