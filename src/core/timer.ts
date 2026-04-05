@@ -14,27 +14,25 @@ export interface PaintHandle {
 }
 
 export function measurePaint(callback: (paintTimeMs: number) => void): PaintHandle {
-  if (typeof requestAnimationFrame === 'undefined') {
-    let cancelled = false;
-    queueMicrotask(() => {
-      if (!cancelled) callback(0);
-    });
-    return {
-      cancel: () => {
-        cancelled = true;
-      },
-    };
-  }
   let cancelled = false;
-  const start = performance.now();
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      if (!cancelled) callback(performance.now() - start);
-    });
-  });
-  return {
+  const handle: PaintHandle = {
     cancel: () => {
       cancelled = true;
     },
   };
+
+  if (typeof requestAnimationFrame === 'undefined') {
+    queueMicrotask(() => {
+      if (!cancelled) callback(0);
+    });
+  } else {
+    const start = performance.now();
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!cancelled) callback(performance.now() - start);
+      });
+    });
+  }
+
+  return handle;
 }
