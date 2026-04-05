@@ -1,5 +1,9 @@
 # vue-render-diagnostics
 
+[![npm version](https://img.shields.io/npm/v/vue-render-diagnostics)](https://www.npmjs.com/package/vue-render-diagnostics)
+[![CI](https://github.com/purupurupu/vue-render-diagnostics/actions/workflows/ci.yml/badge.svg)](https://github.com/purupurupu/vue-render-diagnostics/actions/workflows/ci.yml)
+[![license](https://img.shields.io/npm/l/vue-render-diagnostics)](./LICENSE)
+
 Vue 3 plugin that captures component rendering metrics and outputs AI-optimized structured JSON logs.
 
 ## Install
