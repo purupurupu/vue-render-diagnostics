@@ -25,12 +25,12 @@
   "type": "module",
   "main": "./dist/vue-render-diagnostics.umd.cjs",
   "module": "./dist/vue-render-diagnostics.js",
-  "types": "./dist/index.d.ts",
+  "types": "./dist/src/index.d.ts",
   "exports": {
     ".": {
       "import": "./dist/vue-render-diagnostics.js",
       "require": "./dist/vue-render-diagnostics.umd.cjs",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/src/index.d.ts"
     }
   },
   "scripts": {
