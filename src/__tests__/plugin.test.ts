@@ -111,7 +111,7 @@ describe('VueRenderDiagnostics plugin', () => {
     expect(consoleSpy).not.toHaveBeenCalledWith('[VRT]', expect.any(String));
   });
 
-  it('cleans up tracker on unmount without emitting log', async () => {
+  it('cleans up tracker on unmount without emitting extra log after paint', async () => {
     const logs: VRTComponentLog[] = [];
     const wrapper = mountWithPlugin(SimpleComponent, {
       pluginOptions: { onLog: (log) => logs.push(log) },
@@ -123,6 +123,27 @@ describe('VueRenderDiagnostics plugin', () => {
     wrapper.unmount();
 
     expect(logs).toHaveLength(mountLogs);
+  });
+
+  it('emits mount log when component unmounts before paint completes', async () => {
+    const logs: VRTComponentLog[] = [];
+    const wrapper = mountWithPlugin(SimpleComponent, {
+      pluginOptions: { onLog: (log) => logs.push(log) },
+      props: { message: 'short-lived' },
+    });
+
+    // Unmount before rAF fires — cancels pending paint and emits log via flush
+    wrapper.unmount();
+
+    const componentLogs = logsFor(logs, 'SimpleComponent');
+    expect(componentLogs).toHaveLength(1);
+    expect(componentLogs[0].type).toBe('vrt:component');
+    expect(componentLogs[0].metrics.mountTimeMs).toBeGreaterThanOrEqual(0);
+    expect(componentLogs[0].metrics.paintTimeMs).toBe(0);
+
+    // Advancing rAF should not emit a second log (callback was cancelled)
+    await flushRaf();
+    expect(logsFor(logs, 'SimpleComponent')).toHaveLength(1);
   });
 
   it('emits update log at configured interval', async () => {

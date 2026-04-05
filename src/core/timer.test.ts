@@ -48,13 +48,42 @@ describe('measurePaint', () => {
     expect(callback).toHaveBeenCalledWith(expect.any(Number));
   });
 
-  it('calls callback synchronously with 0 when requestAnimationFrame is unavailable', () => {
+  it('calls callback via microtask with 0 when requestAnimationFrame is unavailable', async () => {
     vi.stubGlobal('requestAnimationFrame', undefined);
     try {
       const callback = vi.fn();
       measurePaint(callback);
+      expect(callback).not.toHaveBeenCalled();
+
+      await Promise.resolve();
       expect(callback).toHaveBeenCalledOnce();
       expect(callback).toHaveBeenCalledWith(0);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('suppresses callback when cancelled before rAF fires', async () => {
+    const callback = vi.fn();
+    const handle = measurePaint(callback);
+
+    handle.cancel();
+
+    await vi.advanceTimersToNextFrame();
+    await vi.advanceTimersToNextFrame();
+
+    expect(callback).not.toHaveBeenCalled();
+  });
+
+  it('suppresses callback when cancelled in no-rAF environment', async () => {
+    vi.stubGlobal('requestAnimationFrame', undefined);
+    try {
+      const callback = vi.fn();
+      const handle = measurePaint(callback);
+      handle.cancel();
+
+      await Promise.resolve();
+      expect(callback).not.toHaveBeenCalled();
     } finally {
       vi.unstubAllGlobals();
     }

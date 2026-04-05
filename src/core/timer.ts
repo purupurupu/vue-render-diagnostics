@@ -9,15 +9,30 @@ export function startTimer(): TimerHandle {
   };
 }
 
-export function measurePaint(callback: (paintTimeMs: number) => void): void {
+export interface PaintHandle {
+  cancel: () => void;
+}
+
+export function measurePaint(callback: (paintTimeMs: number) => void): PaintHandle {
+  let cancelled = false;
+  const handle: PaintHandle = {
+    cancel: () => {
+      cancelled = true;
+    },
+  };
+
   if (typeof requestAnimationFrame === 'undefined') {
-    callback(0);
-    return;
-  }
-  const start = performance.now();
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      callback(performance.now() - start);
+    queueMicrotask(() => {
+      if (!cancelled) callback(0);
     });
-  });
+  } else {
+    const start = performance.now();
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!cancelled) callback(performance.now() - start);
+      });
+    });
+  }
+
+  return handle;
 }
