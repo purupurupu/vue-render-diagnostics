@@ -46,12 +46,15 @@ export interface VRTThresholds {
   updateCount: number;
 }
 
+export type VRTLogLevel = 'all' | 'issues' | 'warn' | 'error' | 'silent';
+
 export interface VRTPluginOptions {
   enabled?: boolean;
   include?: string[] | RegExp;
   exclude?: string[] | RegExp;
   thresholds?: Partial<VRTThresholds>;
   logToConsole?: boolean;
+  logLevel?: VRTLogLevel;
   updateLogInterval?: number;
   onLog?: (log: VRTComponentLog) => void;
 }
