@@ -4,7 +4,11 @@
  */
 export function countNodes(el: unknown): number {
   if (typeof Element !== 'undefined' && el instanceof Element) {
-    return el.querySelectorAll('*').length;
+    try {
+      return el.querySelectorAll('*').length;
+    } catch {
+      return 0;
+    }
   }
   return 0;
 }
