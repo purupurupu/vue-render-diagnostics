@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { defineComponent, ref, nextTick } from 'vue';
+import { defineComponent, ref, nextTick, KeepAlive, h } from 'vue';
 import { VueRenderDiagnostics } from '../plugin/install.ts';
 import { useRenderDiagnostics } from '../composables/useRenderDiagnostics.ts';
 import type { VRTComponentLog } from '../types.ts';
@@ -246,6 +246,172 @@ describe('VueRenderDiagnostics plugin', () => {
 
     expect(logsFor(logsA, 'SimpleComponent')).toHaveLength(1);
     expect(logsFor(logsB, 'SimpleComponent')).toHaveLength(0);
+  });
+});
+
+describe('KeepAlive activated/deactivated hooks', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  function createKeepAliveWrapper(logs: VRTComponentLog[]) {
+    const ChildA = defineComponent({
+      name: 'ChildA',
+      template: '<div>A</div>',
+    });
+
+    const ChildB = defineComponent({
+      name: 'ChildB',
+      template: '<div>B</div>',
+    });
+
+    const Wrapper = defineComponent({
+      name: 'KAWrapper',
+      setup() {
+        const current = ref('ChildA');
+        return { current };
+      },
+      render() {
+        return h(KeepAlive, null, {
+          default: () => h(this.current === 'ChildA' ? ChildA : ChildB),
+        });
+      },
+    });
+
+    return mount(Wrapper, {
+      global: {
+        plugins: [[VueRenderDiagnostics, { onLog: (log: VRTComponentLog) => logs.push(log) }]],
+      },
+    });
+  }
+
+  it('emits log on deactivation', async () => {
+    const logs: VRTComponentLog[] = [];
+    const wrapper = createKeepAliveWrapper(logs);
+
+    await flushRaf();
+    const afterMount = logsFor(logs, 'ChildA').length;
+
+    // Switch to ChildB — deactivates ChildA
+    wrapper.vm.current = 'ChildB';
+    await nextTick();
+    await flushRaf();
+
+    // Deactivation should have emitted a log for ChildA
+    expect(logsFor(logs, 'ChildA').length).toBe(afterMount + 1);
+
+    wrapper.unmount();
+  });
+
+  it('re-initializes tracker on reactivation after flush', async () => {
+    const logs: VRTComponentLog[] = [];
+    const wrapper = createKeepAliveWrapper(logs);
+
+    await flushRaf();
+
+    // Deactivate ChildA (flushes tracker)
+    wrapper.vm.current = 'ChildB';
+    await nextTick();
+    await flushRaf();
+
+    // Reactivate ChildA — tracker was flushed, activated should re-init
+    wrapper.vm.current = 'ChildA';
+    await nextTick();
+    await flushRaf();
+
+    // Deactivate again — should emit another log
+    wrapper.vm.current = 'ChildB';
+    await nextTick();
+    await flushRaf();
+
+    // ChildA: mount paint log + deactivation flush + reactivation paint log + deactivation flush = 4
+    const childALogs = logsFor(logs, 'ChildA');
+    expect(childALogs.length).toBe(4);
+
+    wrapper.unmount();
+  });
+
+  it('does not overwrite tracker on first activation after mount', async () => {
+    const logs: VRTComponentLog[] = [];
+    const wrapper = createKeepAliveWrapper(logs);
+
+    await flushRaf();
+
+    // The mount log should have real mountTimeMs (not overwritten by activated)
+    const mountLog = logsFor(logs, 'ChildA')[0];
+    expect(mountLog.metrics.mountTimeMs).toBeGreaterThanOrEqual(0);
+
+    wrapper.unmount();
+  });
+
+  it('schedules measurePaint on reactivation and emits paint log', async () => {
+    const logs: VRTComponentLog[] = [];
+    const wrapper = createKeepAliveWrapper(logs);
+
+    await flushRaf();
+
+    // Deactivate then reactivate
+    wrapper.vm.current = 'ChildB';
+    await nextTick();
+    wrapper.vm.current = 'ChildA';
+    await nextTick();
+
+    // Flush rAF to let reactivation paint measurement complete
+    await flushRaf();
+
+    // The reactivation paint log should have been emitted
+    const childALogs = logsFor(logs, 'ChildA');
+    const reactivationPaintLog = childALogs.find((l, i) => i > 0 && l.metrics.paintTimeMs >= 0);
+    expect(reactivationPaintLog).toBeDefined();
+
+    wrapper.unmount();
+  });
+
+  it('unmounted after deactivation is a no-op for the deactivated component', async () => {
+    const logs: VRTComponentLog[] = [];
+    const wrapper = createKeepAliveWrapper(logs);
+
+    await flushRaf();
+
+    // Deactivate ChildA
+    wrapper.vm.current = 'ChildB';
+    await nextTick();
+    await flushRaf();
+
+    const childALogsAfterDeactivation = logsFor(logs, 'ChildA').length;
+
+    // Unmount entire wrapper — unmounted fires but ChildA's tracker already flushed
+    wrapper.unmount();
+
+    // No extra logs should be emitted for ChildA
+    expect(logsFor(logs, 'ChildA').length).toBe(childALogsAfterDeactivation);
+  });
+
+  it('cancels pending paint on deactivation before rAF fires', async () => {
+    const logs: VRTComponentLog[] = [];
+    const wrapper = createKeepAliveWrapper(logs);
+
+    // Don't flush rAF — paint is still pending
+    // Deactivate immediately
+    wrapper.vm.current = 'ChildB';
+    await nextTick();
+
+    // Deactivation should emit a log with paintTimeMs 0 (paint was cancelled)
+    const childALogs = logsFor(logs, 'ChildA');
+    expect(childALogs).toHaveLength(1);
+    expect(childALogs[0].metrics.paintTimeMs).toBe(0);
+
+    // rAF should not emit another log (callback was cancelled)
+    await flushRaf();
+    expect(logsFor(logs, 'ChildA')).toHaveLength(1);
+
+    wrapper.unmount();
   });
 });
 

@@ -48,6 +48,16 @@ export function createLifecycleTracker(context: VRTContext): ComponentOptions {
   const { collector, options } = context;
   const pendingPaints = new Map<number, PaintHandle>();
 
+  function schedulePaint(uid: number): void {
+    const handle = measurePaint((paintMs) => {
+      pendingPaints.delete(uid);
+      collector.trackPaint(uid, paintMs);
+      const log = collector.peek(uid);
+      if (log) emitLog(log, options);
+    });
+    pendingPaints.set(uid, handle);
+  }
+
   return {
     beforeMount(this: VueInstance) {
       if (!shouldTrack(this, context)) return;
@@ -58,13 +68,7 @@ export function createLifecycleTracker(context: VRTContext): ComponentOptions {
       const uid = this.$.uid;
       collector.trackMountEnd(uid);
       collector.trackNodeCount(uid, countNodes(this.$el));
-      const handle = measurePaint((paintMs) => {
-        pendingPaints.delete(uid);
-        collector.trackPaint(uid, paintMs);
-        const log = collector.peek(uid);
-        if (log) emitLog(log, options);
-      });
-      pendingPaints.set(uid, handle);
+      schedulePaint(uid);
     },
     beforeUpdate(this: VueInstance) {
       if (!shouldTrack(this, context)) return;
@@ -82,6 +86,27 @@ export function createLifecycleTracker(context: VRTContext): ComponentOptions {
           if (log) emitLog(log, options);
         }
       }
+    },
+    activated(this: VueInstance) {
+      if (!shouldTrack(this, context)) return;
+      const uid = this.$.uid;
+      if (collector.peek(uid)) return;
+      const name = getComponentName(this)!;
+      collector.trackMountStart(name, uid);
+      collector.trackMountEnd(uid);
+      collector.trackNodeCount(uid, countNodes(this.$el));
+      schedulePaint(uid);
+    },
+    deactivated(this: VueInstance) {
+      if (!shouldTrack(this, context)) return;
+      const uid = this.$.uid;
+      const pending = pendingPaints.get(uid);
+      if (pending) {
+        pending.cancel();
+        pendingPaints.delete(uid);
+      }
+      const log = collector.flush(uid);
+      if (log) emitLog(log, options);
     },
     unmounted(this: VueInstance) {
       if (!shouldTrack(this, context)) return;
