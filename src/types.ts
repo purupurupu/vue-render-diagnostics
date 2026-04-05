@@ -55,12 +55,15 @@ export interface VRTThresholds {
 export type VRTLogLevel = 'all' | 'issues' | 'warn' | 'error' | 'silent';
 
 export interface VRTPluginOptions {
+  /** Must be `true` to activate the plugin. Defaults to `false` to prevent accidental production overhead. */
   enabled?: boolean;
   include?: string[] | RegExp;
   exclude?: string[] | RegExp;
   thresholds?: Partial<VRTThresholds>;
   logToConsole?: boolean;
+  /** Controls console output filtering. Does NOT affect `onLog` — the callback always receives all logs. */
   logLevel?: VRTLogLevel;
   updateLogInterval?: number;
+  /** Called for every log regardless of `logLevel`. Use `logLevel` to control console output only. */
   onLog?: (log: VRTComponentLog) => void;
 }
