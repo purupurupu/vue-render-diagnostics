@@ -111,6 +111,10 @@ Returns `null` if the plugin is not installed. The `peek()` method returns a rea
 }
 ```
 
+## Known Limitations
+
+- **Fragment components report `nodeCount: 0`** — components with multiple root nodes (fragments) set `$el` to a Text/Comment node, not an Element. DOM node counting is skipped for these components. Single-root components work correctly.
+
 ## MCP Integration
 
 Logs use the `[VRT]` prefix for easy extraction by AI tools:
