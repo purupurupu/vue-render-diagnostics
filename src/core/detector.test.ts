@@ -42,11 +42,11 @@ describe('detectIssues', () => {
     );
   });
 
-  it('detects slow-update from avgUpdateMs with threshold', () => {
+  it('detects slow-update-avg from avgUpdateMs with threshold', () => {
     const issues = detectIssues(makeMetrics({ avgUpdateMs: 20 }), thresholds);
     expect(issues).toContainEqual(
       expect.objectContaining({
-        id: 'slow-update',
+        id: 'slow-update-avg',
         metric: 'avgUpdateMs',
         severity: 'warn',
         threshold: 16,
@@ -54,11 +54,11 @@ describe('detectIssues', () => {
     );
   });
 
-  it('detects slow-update as error from maxUpdateMs with 2x threshold', () => {
+  it('detects slow-update-max as error from maxUpdateMs with 2x threshold', () => {
     const issues = detectIssues(makeMetrics({ maxUpdateMs: 40 }), thresholds);
     expect(issues).toContainEqual(
       expect.objectContaining({
-        id: 'slow-update',
+        id: 'slow-update-max',
         metric: 'maxUpdateMs',
         severity: 'error',
         threshold: 32,
