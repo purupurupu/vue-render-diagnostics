@@ -222,6 +222,119 @@ describe('VueRenderDiagnostics plugin', () => {
     wrapper.unmount();
   });
 
+  it('respects RegExp include filter', async () => {
+    const logs: VRTComponentLog[] = [];
+    mountWithPlugin(SimpleComponent, {
+      pluginOptions: {
+        include: /^Simple/,
+        onLog: (log) => logs.push(log),
+      },
+    });
+
+    await flushRaf();
+    expect(logsFor(logs, 'SimpleComponent')).toHaveLength(1);
+  });
+
+  it('respects RegExp exclude filter', async () => {
+    const logs: VRTComponentLog[] = [];
+    mountWithPlugin(SimpleComponent, {
+      pluginOptions: {
+        exclude: /Simple/,
+        onLog: (log) => logs.push(log),
+      },
+    });
+
+    await flushRaf();
+    expect(logsFor(logs, 'SimpleComponent')).toHaveLength(0);
+  });
+
+  it('applies include and exclude together', async () => {
+    const logs: VRTComponentLog[] = [];
+
+    const IncludedComp = defineComponent({
+      name: 'IncludedComp',
+      template: '<div />',
+    });
+
+    const ExcludedComp = defineComponent({
+      name: 'IncludedButExcluded',
+      template: '<div />',
+    });
+
+    mount(IncludedComp, {
+      global: {
+        plugins: [
+          [
+            VueRenderDiagnostics,
+            {
+              include: /^Included/,
+              exclude: /Excluded$/,
+              onLog: (log: VRTComponentLog) => logs.push(log),
+            },
+          ],
+        ],
+      },
+    });
+
+    mount(ExcludedComp, {
+      global: {
+        plugins: [
+          [
+            VueRenderDiagnostics,
+            {
+              include: /^Included/,
+              exclude: /Excluded$/,
+              onLog: (log: VRTComponentLog) => logs.push(log),
+            },
+          ],
+        ],
+      },
+    });
+
+    await flushRaf();
+    expect(logsFor(logs, 'IncludedComp')).toHaveLength(1);
+    expect(logsFor(logs, 'IncludedButExcluded')).toHaveLength(0);
+  });
+
+  it('tracks component that re-mounts after unmount', async () => {
+    const logs: VRTComponentLog[] = [];
+    const pluginOptions = { onLog: (log: VRTComponentLog) => logs.push(log) };
+
+    const wrapper1 = mountWithPlugin(SimpleComponent, {
+      pluginOptions,
+      props: { message: 'first' },
+    });
+    await flushRaf();
+    wrapper1.unmount();
+
+    const wrapper2 = mountWithPlugin(SimpleComponent, {
+      pluginOptions,
+      props: { message: 'second' },
+    });
+    await flushRaf();
+    wrapper2.unmount();
+
+    expect(logsFor(logs, 'SimpleComponent')).toHaveLength(2);
+  });
+
+  it('tracks anonymous components with fallback name', async () => {
+    const logs: VRTComponentLog[] = [];
+
+    const AnonComp = defineComponent({
+      template: '<div>anon</div>',
+    });
+
+    mount(AnonComp, {
+      global: {
+        plugins: [[VueRenderDiagnostics, { onLog: (log: VRTComponentLog) => logs.push(log) }]],
+      },
+    });
+
+    await flushRaf();
+    const anonLogs = logs.filter((l) => l.component.startsWith('Anonymous#'));
+    expect(anonLogs).toHaveLength(1);
+  });
+
   it('isolates filter state between multiple app instances', async () => {
     const logsA: VRTComponentLog[] = [];
     const logsB: VRTComponentLog[] = [];
@@ -437,6 +550,25 @@ describe('useRenderDiagnostics composable', () => {
     // Should not throw
     const wrapper = mount(TestComp);
     wrapper.unmount();
+  });
+
+  it('warns when called on an anonymous component', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const AnonComp = defineComponent({
+      setup() {
+        useRenderDiagnostics();
+      },
+      template: '<div />',
+    });
+
+    mount(AnonComp, {
+      global: {
+        plugins: [[VueRenderDiagnostics]],
+      },
+    });
+
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('[VRT]'));
   });
 
   it('opts in a component that would be excluded by filters', async () => {
