@@ -132,18 +132,18 @@ describe('VueRenderDiagnostics plugin', () => {
       props: { message: 'short-lived' },
     });
 
-    // Unmount before rAF fires — cancels pending paint and emits log immediately
+    // Unmount before rAF fires — snapshot fallback ensures no log loss
     wrapper.unmount();
+    expect(logsFor(logs, 'SimpleComponent')).toHaveLength(0);
+
+    // rAF fires — peek() returns null (flushed), falls back to mountSnapshot
+    await flushRaf();
 
     const componentLogs = logsFor(logs, 'SimpleComponent');
     expect(componentLogs).toHaveLength(1);
     expect(componentLogs[0].type).toBe('vrt:component');
     expect(componentLogs[0].metrics.mountTimeMs).toBeGreaterThanOrEqual(0);
     expect(componentLogs[0].metrics.paintTimeMs).toBe(0);
-
-    // Advancing rAF should not emit a second log (callback was cancelled)
-    await flushRaf();
-    expect(logsFor(logs, 'SimpleComponent')).toHaveLength(1);
   });
 
   it('emits update log at configured interval', async () => {

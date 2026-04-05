@@ -1,6 +1,5 @@
 import type { ComponentOptions, ComponentPublicInstance } from 'vue';
 import type { VRTContext } from './context.ts';
-import type { PaintHandle } from '../core/timer.ts';
 import { measurePaint } from '../core/timer.ts';
 import { emitLog } from '../core/logger.ts';
 import { countNodes } from '../utils/dom.ts';
@@ -46,7 +45,6 @@ function getComponentName(instance: VueInstance): string | undefined {
 
 export function createLifecycleTracker(context: VRTContext): ComponentOptions {
   const { collector, options } = context;
-  const pendingPaints = new Map<number, PaintHandle>();
 
   return {
     beforeMount(this: VueInstance) {
@@ -59,13 +57,11 @@ export function createLifecycleTracker(context: VRTContext): ComponentOptions {
       collector.trackMountEnd(uid);
       collector.trackNodeCount(uid, countNodes(this.$el));
       const mountSnapshot = collector.peek(uid);
-      const handle = measurePaint((paintMs) => {
-        pendingPaints.delete(uid);
+      measurePaint((paintMs) => {
         collector.trackPaint(uid, paintMs);
         const log = collector.peek(uid) ?? mountSnapshot;
         if (log) emitLog(log, options);
       });
-      pendingPaints.set(uid, handle);
     },
     beforeUpdate(this: VueInstance) {
       if (!shouldTrack(this, context)) return;
@@ -86,16 +82,7 @@ export function createLifecycleTracker(context: VRTContext): ComponentOptions {
     },
     unmounted(this: VueInstance) {
       if (!shouldTrack(this, context)) return;
-      const uid = this.$.uid;
-      const pending = pendingPaints.get(uid);
-      if (pending) {
-        pending.cancel();
-        pendingPaints.delete(uid);
-        const log = collector.flush(uid);
-        if (log) emitLog(log, options);
-      } else {
-        collector.flush(uid);
-      }
+      collector.flush(this.$.uid);
     },
   };
 }

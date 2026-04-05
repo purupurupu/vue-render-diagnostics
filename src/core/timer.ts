@@ -9,25 +9,15 @@ export function startTimer(): TimerHandle {
   };
 }
 
-export interface PaintHandle {
-  cancel: () => void;
-}
-
-export function measurePaint(callback: (paintTimeMs: number) => void): PaintHandle {
+export function measurePaint(callback: (paintTimeMs: number) => void): void {
   if (typeof requestAnimationFrame === 'undefined') {
     callback(0);
-    return { cancel: () => {} };
+    return;
   }
-  let cancelled = false;
   const start = performance.now();
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      if (!cancelled) callback(performance.now() - start);
+      callback(performance.now() - start);
     });
   });
-  return {
-    cancel: () => {
-      cancelled = true;
-    },
-  };
 }
