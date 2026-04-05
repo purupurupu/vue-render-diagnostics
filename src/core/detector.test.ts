@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { detectIssues } from './detector.ts';
-import type { VRTMetrics, VRTThresholds } from '../types.ts';
+import type { VRDMetrics, VRDThresholds } from '../types.ts';
 import { DEFAULT_THRESHOLDS } from '../constants.ts';
 
-function makeMetrics(overrides: Partial<VRTMetrics> = {}): VRTMetrics {
+function makeMetrics(overrides: Partial<VRDMetrics> = {}): VRDMetrics {
   return {
     mountTimeMs: 10,
     paintTimeMs: 10,
@@ -16,7 +16,7 @@ function makeMetrics(overrides: Partial<VRTMetrics> = {}): VRTMetrics {
 }
 
 describe('detectIssues', () => {
-  const thresholds: VRTThresholds = DEFAULT_THRESHOLDS;
+  const thresholds: VRDThresholds = DEFAULT_THRESHOLDS;
 
   it('returns empty array for metrics within thresholds', () => {
     const issues = detectIssues(makeMetrics(), thresholds);
@@ -101,7 +101,7 @@ describe('detectIssues', () => {
   });
 
   it('uses custom thresholds in threshold field', () => {
-    const custom: VRTThresholds = { ...DEFAULT_THRESHOLDS, mountTimeMs: 30 };
+    const custom: VRDThresholds = { ...DEFAULT_THRESHOLDS, mountTimeMs: 30 };
     const issues = detectIssues(makeMetrics({ mountTimeMs: 40 }), custom);
     expect(issues).toContainEqual(
       expect.objectContaining({ id: 'slow-mount', severity: 'warn', threshold: 30 }),

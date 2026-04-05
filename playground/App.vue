@@ -3,7 +3,7 @@ import { ref } from 'vue';
 import { useRenderDiagnostics } from '../src/index.ts';
 import HeavyList from './HeavyList.vue';
 
-// Opt-in App component for VRT tracking
+// Opt-in App component for VRD tracking
 useRenderDiagnostics();
 
 const count = ref(0);
@@ -12,8 +12,8 @@ const showHeavy = ref(false);
 
 <template>
   <div>
-    <h1>VRT Playground</h1>
-    <p>Open the browser console to see [VRT] logs.</p>
+    <h1>VRD Playground</h1>
+    <p>Open the browser console to see [VRD] logs.</p>
 
     <button @click="count++">Count: {{ count }}</button>
 

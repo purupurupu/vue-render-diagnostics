@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils';
 import { defineComponent, ref, nextTick, KeepAlive, h } from 'vue';
 import { VueRenderDiagnostics } from '../plugin/install.ts';
 import { useRenderDiagnostics } from '../composables/useRenderDiagnostics.ts';
-import type { VRTComponentLog } from '../types.ts';
+import type { VRDComponentLog } from '../types.ts';
 import SimpleComponent from './fixtures/SimpleComponent.vue';
 
 function mountWithPlugin<T extends Record<string, unknown>>(
@@ -18,7 +18,7 @@ function mountWithPlugin<T extends Record<string, unknown>>(
   });
 }
 
-function logsFor(logs: VRTComponentLog[], name: string): VRTComponentLog[] {
+function logsFor(logs: VRDComponentLog[], name: string): VRDComponentLog[] {
   return logs.filter((l) => l.component === name);
 }
 
@@ -39,7 +39,7 @@ describe('VueRenderDiagnostics plugin', () => {
   });
 
   it('emits log after mount paint completion', async () => {
-    const logs: VRTComponentLog[] = [];
+    const logs: VRDComponentLog[] = [];
     mountWithPlugin(SimpleComponent, {
       pluginOptions: { onLog: (log) => logs.push(log) },
       props: { message: 'hello' },
@@ -54,7 +54,7 @@ describe('VueRenderDiagnostics plugin', () => {
   });
 
   it('does not track when enabled is false', async () => {
-    const logs: VRTComponentLog[] = [];
+    const logs: VRDComponentLog[] = [];
     const wrapper = mountWithPlugin(SimpleComponent, {
       pluginOptions: { enabled: false, onLog: (log) => logs.push(log) },
     });
@@ -65,7 +65,7 @@ describe('VueRenderDiagnostics plugin', () => {
   });
 
   it('respects include filter', async () => {
-    const logs: VRTComponentLog[] = [];
+    const logs: VRDComponentLog[] = [];
     mountWithPlugin(SimpleComponent, {
       pluginOptions: {
         include: ['NonExistentComponent'],
@@ -79,7 +79,7 @@ describe('VueRenderDiagnostics plugin', () => {
   });
 
   it('respects exclude filter', async () => {
-    const logs: VRTComponentLog[] = [];
+    const logs: VRDComponentLog[] = [];
     mountWithPlugin(SimpleComponent, {
       pluginOptions: {
         exclude: ['SimpleComponent'],
@@ -98,7 +98,7 @@ describe('VueRenderDiagnostics plugin', () => {
 
     await flushRaf();
 
-    expect(consoleSpy).toHaveBeenCalledWith('[VRT]', expect.any(String));
+    expect(consoleSpy).toHaveBeenCalledWith('[VRD]', expect.any(String));
   });
 
   it('does not log to console when logToConsole is false', async () => {
@@ -108,11 +108,11 @@ describe('VueRenderDiagnostics plugin', () => {
     });
 
     await flushRaf();
-    expect(consoleSpy).not.toHaveBeenCalledWith('[VRT]', expect.any(String));
+    expect(consoleSpy).not.toHaveBeenCalledWith('[VRD]', expect.any(String));
   });
 
   it('cleans up tracker on unmount without emitting extra log after paint', async () => {
-    const logs: VRTComponentLog[] = [];
+    const logs: VRDComponentLog[] = [];
     const wrapper = mountWithPlugin(SimpleComponent, {
       pluginOptions: { onLog: (log) => logs.push(log) },
     });
@@ -126,7 +126,7 @@ describe('VueRenderDiagnostics plugin', () => {
   });
 
   it('emits mount log when component unmounts before paint completes', async () => {
-    const logs: VRTComponentLog[] = [];
+    const logs: VRDComponentLog[] = [];
     const wrapper = mountWithPlugin(SimpleComponent, {
       pluginOptions: { onLog: (log) => logs.push(log) },
       props: { message: 'short-lived' },
@@ -147,7 +147,7 @@ describe('VueRenderDiagnostics plugin', () => {
   });
 
   it('emits update log at configured interval', async () => {
-    const logs: VRTComponentLog[] = [];
+    const logs: VRDComponentLog[] = [];
 
     const Counter = defineComponent({
       name: 'Counter',
@@ -166,7 +166,7 @@ describe('VueRenderDiagnostics plugin', () => {
             {
               enabled: true,
               updateLogInterval: 3,
-              onLog: (log: VRTComponentLog) => logs.push(log),
+              onLog: (log: VRDComponentLog) => logs.push(log),
             },
           ],
         ],
@@ -196,7 +196,7 @@ describe('VueRenderDiagnostics plugin', () => {
   });
 
   it('does not emit update logs when updateLogInterval is not set', async () => {
-    const logs: VRTComponentLog[] = [];
+    const logs: VRDComponentLog[] = [];
 
     const Counter = defineComponent({
       name: 'Counter2',
@@ -212,7 +212,7 @@ describe('VueRenderDiagnostics plugin', () => {
         plugins: [
           [
             VueRenderDiagnostics,
-            { enabled: true, onLog: (log: VRTComponentLog) => logs.push(log) },
+            { enabled: true, onLog: (log: VRDComponentLog) => logs.push(log) },
           ],
         ],
       },
@@ -232,7 +232,7 @@ describe('VueRenderDiagnostics plugin', () => {
   });
 
   it('respects RegExp include filter', async () => {
-    const logs: VRTComponentLog[] = [];
+    const logs: VRDComponentLog[] = [];
     mountWithPlugin(SimpleComponent, {
       pluginOptions: {
         include: /^Simple/,
@@ -245,7 +245,7 @@ describe('VueRenderDiagnostics plugin', () => {
   });
 
   it('respects RegExp exclude filter', async () => {
-    const logs: VRTComponentLog[] = [];
+    const logs: VRDComponentLog[] = [];
     mountWithPlugin(SimpleComponent, {
       pluginOptions: {
         exclude: /Simple/,
@@ -258,7 +258,7 @@ describe('VueRenderDiagnostics plugin', () => {
   });
 
   it('applies include and exclude together', async () => {
-    const logs: VRTComponentLog[] = [];
+    const logs: VRDComponentLog[] = [];
 
     const IncludedComp = defineComponent({
       name: 'IncludedComp',
@@ -279,7 +279,7 @@ describe('VueRenderDiagnostics plugin', () => {
               enabled: true,
               include: /^Included/,
               exclude: /Excluded$/,
-              onLog: (log: VRTComponentLog) => logs.push(log),
+              onLog: (log: VRDComponentLog) => logs.push(log),
             },
           ],
         ],
@@ -295,7 +295,7 @@ describe('VueRenderDiagnostics plugin', () => {
               enabled: true,
               include: /^Included/,
               exclude: /Excluded$/,
-              onLog: (log: VRTComponentLog) => logs.push(log),
+              onLog: (log: VRDComponentLog) => logs.push(log),
             },
           ],
         ],
@@ -308,8 +308,8 @@ describe('VueRenderDiagnostics plugin', () => {
   });
 
   it('tracks component that re-mounts after unmount', async () => {
-    const logs: VRTComponentLog[] = [];
-    const pluginOptions = { onLog: (log: VRTComponentLog) => logs.push(log) };
+    const logs: VRDComponentLog[] = [];
+    const pluginOptions = { onLog: (log: VRDComponentLog) => logs.push(log) };
 
     const wrapper1 = mountWithPlugin(SimpleComponent, {
       pluginOptions,
@@ -329,7 +329,7 @@ describe('VueRenderDiagnostics plugin', () => {
   });
 
   it('tracks anonymous components with fallback name', async () => {
-    const logs: VRTComponentLog[] = [];
+    const logs: VRDComponentLog[] = [];
 
     const AnonComp = defineComponent({
       template: '<div>anon</div>',
@@ -340,7 +340,7 @@ describe('VueRenderDiagnostics plugin', () => {
         plugins: [
           [
             VueRenderDiagnostics,
-            { enabled: true, onLog: (log: VRTComponentLog) => logs.push(log) },
+            { enabled: true, onLog: (log: VRDComponentLog) => logs.push(log) },
           ],
         ],
       },
@@ -352,8 +352,8 @@ describe('VueRenderDiagnostics plugin', () => {
   });
 
   it('isolates filter state between multiple app instances', async () => {
-    const logsA: VRTComponentLog[] = [];
-    const logsB: VRTComponentLog[] = [];
+    const logsA: VRDComponentLog[] = [];
+    const logsB: VRDComponentLog[] = [];
 
     // App A includes only SimpleComponent
     mountWithPlugin(SimpleComponent, {
@@ -389,7 +389,7 @@ describe('KeepAlive activated/deactivated hooks', () => {
     vi.restoreAllMocks();
   });
 
-  function createKeepAliveWrapper(logs: VRTComponentLog[]) {
+  function createKeepAliveWrapper(logs: VRDComponentLog[]) {
     const ChildA = defineComponent({
       name: 'ChildA',
       template: '<div>A</div>',
@@ -418,7 +418,7 @@ describe('KeepAlive activated/deactivated hooks', () => {
         plugins: [
           [
             VueRenderDiagnostics,
-            { enabled: true, onLog: (log: VRTComponentLog) => logs.push(log) },
+            { enabled: true, onLog: (log: VRDComponentLog) => logs.push(log) },
           ],
         ],
       },
@@ -426,7 +426,7 @@ describe('KeepAlive activated/deactivated hooks', () => {
   }
 
   it('emits log on deactivation', async () => {
-    const logs: VRTComponentLog[] = [];
+    const logs: VRDComponentLog[] = [];
     const wrapper = createKeepAliveWrapper(logs);
 
     await flushRaf();
@@ -444,7 +444,7 @@ describe('KeepAlive activated/deactivated hooks', () => {
   });
 
   it('re-initializes tracker on reactivation after flush', async () => {
-    const logs: VRTComponentLog[] = [];
+    const logs: VRDComponentLog[] = [];
     const wrapper = createKeepAliveWrapper(logs);
 
     await flushRaf();
@@ -472,7 +472,7 @@ describe('KeepAlive activated/deactivated hooks', () => {
   });
 
   it('does not overwrite tracker on first activation after mount', async () => {
-    const logs: VRTComponentLog[] = [];
+    const logs: VRDComponentLog[] = [];
     const wrapper = createKeepAliveWrapper(logs);
 
     await flushRaf();
@@ -485,7 +485,7 @@ describe('KeepAlive activated/deactivated hooks', () => {
   });
 
   it('schedules measurePaint on reactivation and emits paint log', async () => {
-    const logs: VRTComponentLog[] = [];
+    const logs: VRDComponentLog[] = [];
     const wrapper = createKeepAliveWrapper(logs);
 
     await flushRaf();
@@ -508,7 +508,7 @@ describe('KeepAlive activated/deactivated hooks', () => {
   });
 
   it('unmounted after deactivation is a no-op for the deactivated component', async () => {
-    const logs: VRTComponentLog[] = [];
+    const logs: VRDComponentLog[] = [];
     const wrapper = createKeepAliveWrapper(logs);
 
     await flushRaf();
@@ -528,7 +528,7 @@ describe('KeepAlive activated/deactivated hooks', () => {
   });
 
   it('cancels pending paint on deactivation before rAF fires', async () => {
-    const logs: VRTComponentLog[] = [];
+    const logs: VRDComponentLog[] = [];
     const wrapper = createKeepAliveWrapper(logs);
 
     // Don't flush rAF — paint is still pending
@@ -589,11 +589,11 @@ describe('useRenderDiagnostics composable', () => {
       },
     });
 
-    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('[VRT]'));
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('[VRD]'));
   });
 
   it('opts in a component that would be excluded by filters', async () => {
-    const logs: VRTComponentLog[] = [];
+    const logs: VRDComponentLog[] = [];
 
     const TrackedComp = defineComponent({
       name: 'TrackedComp',
@@ -611,7 +611,7 @@ describe('useRenderDiagnostics composable', () => {
             {
               enabled: true,
               include: ['SomethingElse'],
-              onLog: (log: VRTComponentLog) => logs.push(log),
+              onLog: (log: VRDComponentLog) => logs.push(log),
             },
           ],
         ],

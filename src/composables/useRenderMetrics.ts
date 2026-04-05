@@ -1,8 +1,8 @@
-import type { VRTComponentLog } from '../types.ts';
+import type { VRDComponentLog } from '../types.ts';
 import { getCurrentInstance, inject } from 'vue';
-import { VRT_CONTEXT_KEY } from '../constants.ts';
+import { VRD_CONTEXT_KEY } from '../constants.ts';
 
-export type RenderMetricsHandle = { peek: () => VRTComponentLog | null };
+export type RenderMetricsHandle = { peek: () => VRDComponentLog | null };
 
 /**
  * Read-only composable for programmatic metric retrieval.
@@ -15,7 +15,7 @@ export function useRenderMetrics(): RenderMetricsHandle | null {
   const instance = getCurrentInstance();
   if (!instance) return null;
 
-  const context = inject(VRT_CONTEXT_KEY, null);
+  const context = inject(VRD_CONTEXT_KEY, null);
   if (!context) return null;
 
   const uid = instance.uid;
