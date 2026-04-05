@@ -67,10 +67,11 @@ const AnonComponent = defineComponent({
     <section>
       <h2>
         <button @click="toggle('heavy')">{{ showSection.heavy ? 'Hide' : 'Show' }}</button>
-        Heavy DOM (1000 nodes)
+        Heavy DOM (2000 nodes)
       </h2>
       <p>
-        Should trigger <code>large-dom</code> issue if nodeCount exceeds threshold (default: 1500).
+        Should trigger <code>large-dom</code> issue since 2000 nodes exceeds threshold (default:
+        1500).
       </p>
       <div v-if="showSection.heavy">
         <HeavyList :items="2000" />
