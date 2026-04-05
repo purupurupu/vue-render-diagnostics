@@ -78,10 +78,10 @@ export function createLifecycleTracker(context: VRTContext): ComponentOptions {
       if (!shouldTrack(this, context)) return;
       const uid = this.$.uid;
       collector.trackUpdateEnd(uid);
-      collector.trackNodeCount(uid, countNodes(this.$el));
       if (options.updateLogInterval && options.updateLogInterval > 0) {
         const count = collector.getUpdateCount(uid);
         if (count > 0 && count % options.updateLogInterval === 0) {
+          collector.trackNodeCount(uid, countNodes(this.$el));
           const log = collector.peek(uid);
           if (log) emitLog(log, options);
         }
