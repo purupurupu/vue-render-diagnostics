@@ -6,6 +6,11 @@ import { emitLog } from '../core/logger.ts';
 import { countNodes } from '../utils/dom.ts';
 import { resolveComponentName } from '../utils/component-name.ts';
 
+/**
+ * $.uid is ComponentInternalInstance.uid — not part of Vue's public API
+ * but stable across all 3.x versions and used by vue-devtools/pinia.
+ * If a future Vue version removes it, replace with a WeakMap-based ID.
+ */
 type VueInstance = ComponentPublicInstance & { $: { uid: number } };
 
 function shouldTrack(instance: VueInstance, context: VRTContext): boolean {

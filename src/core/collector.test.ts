@@ -72,17 +72,6 @@ describe('Collector', () => {
     expect(log!.metrics.nodeCount).toBe(500);
   });
 
-  it('tracks async setup signal', () => {
-    const collector = new Collector();
-
-    collector.trackMountStart('AsyncComp', 1);
-    collector.trackAsyncSetup(1);
-    collector.trackMountEnd(1);
-
-    const log = collector.flush(1);
-    expect(log!.signals.hasAsyncInSetup).toBe(true);
-  });
-
   it('produces correct log structure', () => {
     const collector = new Collector();
 
@@ -105,7 +94,6 @@ describe('Collector', () => {
         nodeCount: 0,
       },
       signals: {
-        hasAsyncInSetup: false,
         dataUpdateDetected: false,
         clockSkewDetected: false,
       },
@@ -273,6 +261,5 @@ describe('Collector', () => {
     collector.trackUpdateStart(999);
     collector.trackUpdateEnd(999);
     collector.trackNodeCount(999, 100);
-    collector.trackAsyncSetup(999);
   });
 });

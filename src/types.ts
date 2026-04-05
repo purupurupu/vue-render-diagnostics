@@ -7,8 +7,12 @@ export interface VRTMetrics {
   nodeCount: number;
 }
 
+/**
+ * Async setup detection (hasAsyncInSetup) was removed because Vue 3 provides
+ * no public API to reliably detect async setup() from a global mixin.
+ * See: https://github.com/purupurupu/vue-render-diagnostics/issues/34
+ */
 export interface VRTSignals {
-  hasAsyncInSetup: boolean;
   dataUpdateDetected: boolean;
   clockSkewDetected: boolean;
 }

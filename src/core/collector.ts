@@ -13,7 +13,6 @@ interface ComponentTracker {
   totalUpdateMs: number;
   maxUpdateMs: number;
   nodeCount: number;
-  hasAsyncInSetup: boolean;
   clockSkewDetected: boolean;
   updateTimer: TimerHandle | null;
 }
@@ -36,7 +35,6 @@ export class Collector {
       totalUpdateMs: 0,
       maxUpdateMs: 0,
       nodeCount: 0,
-      hasAsyncInSetup: false,
       clockSkewDetected: false,
       updateTimer: null,
     });
@@ -87,12 +85,6 @@ export class Collector {
     tracker.nodeCount = count;
   }
 
-  trackAsyncSetup(uid: number): void {
-    const tracker = this.trackers.get(uid);
-    if (!tracker) return;
-    tracker.hasAsyncInSetup = true;
-  }
-
   getUpdateCount(uid: number): number {
     return this.trackers.get(uid)?.updateCount ?? 0;
   }
@@ -121,7 +113,6 @@ export class Collector {
     };
 
     const signals: VRTSignals = {
-      hasAsyncInSetup: tracker.hasAsyncInSetup,
       dataUpdateDetected: tracker.updateCount > 0,
       clockSkewDetected: tracker.clockSkewDetected,
     };
