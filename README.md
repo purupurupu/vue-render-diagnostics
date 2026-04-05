@@ -26,7 +26,7 @@ Open your browser console — you'll see `[VRT]` prefixed JSON logs when compone
 
 ```ts
 app.use(VueRenderDiagnostics, {
-  enabled: true, // default: true
+  enabled: import.meta.env.DEV, // disable in production (Vite)
   include: ['UserList', 'Header'], // track only these components (string[] or RegExp)
   exclude: /^Internal/, // skip matching components (string[] or RegExp)
   logToConsole: true, // default: true
